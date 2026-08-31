@@ -4,7 +4,7 @@ Implementation specification for `toxcalc`. Written to be implemented from
 directly. The collaborator-facing companion is `notes/TOXCALC-human.md`; every
 decision is stated in full **here** and only summarised there.
 
-Status: Phases 0, 1 and 2 complete. Phases 3-9 specified below. Decisions taken
+Status: Phases 0 to 3 complete. Phases 4-9 specified below. Decisions taken
 since this document was first written are recorded in the package vignette
 `vignettes/recreating-toxcalc.qmd`, which is the collaborator-facing record.
 
@@ -147,9 +147,9 @@ applied after the test, with its own row in the decision trail.
 ### 2.6 Manual errata, all confirmed numerically
 
 **Every fixture must be checked for internal consistency before being frozen
-into a test, not transcribed on faith.** Four defects have been confirmed so
-far. Each is reconciled by a test in the suite, so it cannot later be mistaken
-for an implementation error.
+into a test, not transcribed on faith.** Seven defects have been confirmed so
+far, all in EPA-821-R-02-013. Each is reconciled by a test in the suite, so none
+can later be mistaken for an implementation error.
 
 1. **Appendix C section 1.11 gives the MSD as 0.087 mg.** The same section
    computes 0.162, and 24% of the 0.677 control mean is 0.162. The 0.087 is the
@@ -174,7 +174,21 @@ for an implementation error.
    required to use a printed normal table, reproduces `D = 0.0597` and
    `D* = 0.4683` against the printed 0.4684.
 
-In all four cases the conclusion the manual draws is unchanged.
+5. **Appendix D Table D.3 gives the within mean square as 0.0029.** The same
+   table gives `SSW = 0.111` on 14 degrees of freedom, and 0.111/14 = 0.0079.
+   *Confirmed:* the manual's own printed `t` values follow from 0.0079, so the
+   printed mean square is the error and everything downstream of it is right.
+
+6. **Appendix D Table D.4 gives `t = 0.220` at 64 ug/L; it is 0.270.**
+   *Confirmed:* from the manual's own means (0.677, 0.660) and pooled standard
+   deviation the statistic is 0.2704. The other three comparisons agree with
+   the manual to within rounding.
+
+7. **Appendix E Table E.4 gives the 6% rank sum as 64; it is 63.5.**
+   *Confirmed:* the ranks the manual itself lists in Table E.3 for that
+   concentration sum to 63.5. Both are at or below the critical 76.
+
+In all seven cases the conclusion the manual draws is unchanged.
 
 Two further printed values agree once the manual's own rounding is applied and
 are therefore **not** errata: Shapiro-Wilk `W = 0.959` (Royston gives 0.9601
@@ -613,7 +627,7 @@ them; the same reasoning appears, less densely, in
 | **0** | Scaffold: DESCRIPTION, package/params files, air, editorconfig, gitattributes, LICENSE, NEWS, pkgdown, three workflows, build script, Rbuildignore, CLAUDE.md | `R CMD check` 0/0/0 with zero exports. **DONE.** |
 | **1** | `toxcalc_data()` + methods; `arcsine_sqrt()` / `inv_arcsine_sqrt()` with the Bartlett (1937) endpoint adjustments; `smooth_monotone()` (PAVA, both directions, optional weights); `is_monotone()`; `abbott()` | **DONE.** Reproduces App B 4.2 (`RP = 0.60 -> 0.8861`; `RP = 0, n = 20 -> 0.1120`; `RP = 1 -> 1.4588`) and App K smoothing (`0.02`). PAVA, not pairwise averaging: the App K case pools five values at once. |
 | **2** | `epa_normality()` (pooled centred within-group residuals; Royston, Kolmogorov D above n = 50 with Table B.11); `epa_variance()` (Bartlett, plus Levene and Fligner flagged non-EPA); `msd()`, `pmsd()`; deterministic Dunnett critical value in `R/critical.R`; the three EPA datasets and `epa_pmsd_bounds` | **DONE.** App B `W = 0.9601` vs printed 0.959; Bartlett 6.836 with the printed 7.691 reconciled; Kolmogorov `D* = 0.4572` with the printed 0.4684 reconciled; App C `Sw = 0.0971`, `t = 1.486, 0.248, 1.635, 3.248`, `d = 2.3561` vs tabled 2.36, `MSD = 0.1619`, `PMSD = 23.9%`. 175 assertions. |
-| **3** | The seven flowchart tests, common `toxcalc_comparison` class | Dunnett reproduces `t = 1.487, 0.248, 1.633, 3.251`, critical 2.36, NOEC = 128; Bonferroni-t reproduces App D; Steel reproduces the App E rank sums; Fisher reproduces App G |
+| **3** | `dunnett()`, `bonferroni_t()`, `dunn_sidak_t()`, `welch_t()`, `steel()`, `wilcoxon_rank_sum()`, `fisher_exact()`, sharing the `toxcalc_comparison` class and the NOEC/LOEC derivation | **DONE.** App C: `t = 1.486, 0.248, 1.635, 3.248`, critical 2.3561, NOEC 128, LOEC 256. App D: `t = 1.622, 0.270, 1.785, 4.028`, critical 2.510, NOEC 128, LOEC 256. App E: rank sums 84, 63.5, 76, 55, NOEC 3, LOEC 6. App F: rank sums 79, 57, 58, 55, NOEC 3, LOEC 6. App G: NOEC 12, LOEC 25. 254 assertions. |
 | **4** | `walk_flowchart()`, chart data, `decisions()`, `toxcalc()` hypothesis branch, print/summary with snapshot tests, exclusion rules (9.5.2), lower-PMSD override (10.2.8.2.5), override warning | End-to-end reproduction of the Section 12 fathead embryo-larval example and the App B/C growth example. **First releasable version.** |
 | **5** | `graphical_lc50()`, `spearman_karber()`, `trimmed_spearman_karber()`, `probit_lc()`, and the Fig. 6 chart | Acute Table 20: Graphical 35%; SK `m = 1.656527`, `V(m) = 0.0010977`, LC50 45.3% (38.9, 52.8); TSK trim 20.51%, LC50 77.11 (69.74, 85.26); App K trim 20.41%, LC50 77.28; Probit chi-sq 3.076, LC50 22.872 (18.787, 27.846), LC1 7.924 (4.147, 10.959) |
 | **6** | `icp()` with in-loop re-smoothing and the EPA order-statistic interval | App M `IC25 = 8.57%`, `IC50 = 10.89%`; reproducible under a seed; NA-replicate accounting reported |

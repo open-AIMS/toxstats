@@ -43,17 +43,20 @@ sources.
 
 ## Status
 
-**Experimental, under active development.** Phases 0 to 2 are complete: the data
+**Experimental, under active development.** Phases 0 to 3 are complete: the data
 layer, the EPA transformations and monotone smoothing, the normality and
-homogeneity-of-variance tests, and the minimum significant difference. The
-package passes `R CMD check` cleanly at every phase. The individual hypothesis
-tests, the flowchart engine and the point-estimation methods are still to come.
+homogeneity-of-variance tests, the minimum significant difference, and the seven
+hypothesis tests the EPA flowchart can select. Each reproduces its worked
+example in the manuals, and `R CMD check` is clean at every phase.
+
+Still to come: the flowchart engine that selects among those tests and records
+why, and the point-estimation methods for the LC50 and ICp.
 
 The vignette `vignettes/recreating-toxcalc.qmd` records every point at which the
 source material was ambiguous, internally inconsistent, or at odds with modern
-practice, and what was decided in each case, with the evidence. Four of the
-manuals' printed statistics have so far been found not to follow from their own
-data; each is reconciled by a test rather than quietly worked around.
+practice, and what was decided in each case, with the evidence. Seven of the
+manual's printed values have so far been found not to follow from its own data;
+each is reconciled by a test rather than quietly worked around.
 
 See `notes/TOXCALC-human.md` for the plan and `notes/TOXCALC-claude.md` for the
 specification.

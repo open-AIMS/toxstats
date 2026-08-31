@@ -108,3 +108,70 @@ pkgdown workflows so CI can build it.
 R CMD check clean at 0/0/0 throughout; 175 assertions passing.
 
 ---
+**User:** Yes, continue
+
+**Claude:** Implemented Phase 3, the seven hypothesis tests the EPA flowchart
+can select, each validated against its worked example in the manual.
+
+`R/parametric.R` adds `dunnett()`, `bonferroni_t()`, `dunn_sidak_t()` and
+`welch_t()`; `R/nonparametric.R` adds `steel()`, `wilcoxon_rank_sum()` and
+`fisher_exact()`; `R/comparisons.R` holds the shared `toxcalc_comparison`
+class, the NOEC and LOEC derivation, and the print method. Two datasets were
+added, `ceriodaphnia_e1` and `ceriodaphnia_g2`.
+
+**Reproduction of the worked examples.** Appendix C: `t = 1.486, 0.248, 1.635,
+3.248` against a printed 1.487, 0.248, 1.633, 3.251, critical value 2.3561
+against a tabled 2.36, NOEC 128 and LOEC 256. Appendix D: critical value 2.510
+exactly, NOEC 128 and LOEC 256. Appendix E: rank sums 84, 63.5, 76 and 55, NOEC
+3 and LOEC 6. Appendix F: rank sums 79, 57, 58 and 55 exactly, NOEC 3 and LOEC
+6. Appendix G: NOEC 12 and LOEC 25.
+
+**Decisions taken.**
+
+*Steel's test.* The manual compares each rank sum with a tabulated critical
+value (Table E.5), which section 3 of the specification forbids transcribing.
+`kSamples::Steel.test()` instead evaluates the joint null distribution of all
+`k` comparisons and returns multiplicity-adjusted p-values. These reproduce the
+manual's conclusion exactly, including the 12 per cent comparison whose rank sum
+equals the tabulated critical value, where the adjusted p-value is 0.0477.
+
+*Wilcoxon.* Same reasoning for Table F.5: the p-value comes from
+`stats::wilcox.test()` and is compared with `alpha / k`. Reproduction counts tie
+constantly, so an exact p-value is unavailable and the normal approximation is
+used; the resulting warning is muffled deliberately and documented.
+
+*Fisher's Exact Test.* No multiplicity adjustment is applied by default, because
+Appendix G section 1 asks for a pairwise error rate rather than an
+experiment-wise one on the grounds that the test is itself conservative.
+
+*Bonferroni critical values.* EPA Table D.5 turns out to be exactly
+`qt(1 - alpha / k, df)`, giving 2.510 for the worked example and 2.241 against a
+printed 2.242 in the row for infinite degrees of freedom, so the table needs no
+transcription either.
+
+*Adjusted p-values.* Each parametric test reports a multiplicity-adjusted
+p-value rather than the raw one, so that comparing it with alpha gives the same
+answer as comparing the statistic with the familywise critical value. For
+Dunnett's procedure the adjustment comes from the same integral that produces
+the critical value.
+
+*Refusing the wrong test.* `dunnett()` and `steel()` signal an error on an
+unbalanced design rather than returning a value the manual would not accept, and
+both non-parametric tests refuse fewer than four replicates per concentration
+(section 9.4.5.2).
+
+**Three further defects found in the manual**, bringing the total to seven, each
+confirmed numerically and reconciled by a test. Appendix D Table D.3 gives the
+within mean square as 0.0029 where its own sum of squares and degrees of freedom
+give 0.0079, which is what its printed t values were computed from. Appendix D
+Table D.4 gives `t = 0.220` at 64 µg/L where the manual's own means and pooled
+standard deviation give 0.270. Appendix E Table E.4 gives the 6 per cent rank sum
+as 64 where the ranks listed in its own Table E.3 sum to 63.5.
+
+`scripts/build.R` now installs the package before checking, because Quarto
+renders the vignette in a fresh session against the installed package rather
+than the source tree.
+
+R CMD check clean at 0/0/0; 254 assertions passing.
+
+---

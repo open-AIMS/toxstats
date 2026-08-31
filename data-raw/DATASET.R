@@ -244,3 +244,103 @@ epa_pmsd_bounds <- data.frame(
 )
 
 usethis::use_data(epa_pmsd_bounds, overwrite = TRUE)
+
+# Table E.1 -- Ceriodaphnia dubia reproduction, used for the Steel's Many-One
+# Rank Test worked example in Appendix E, and (with two values removed) for
+# the Wilcoxon Rank Sum worked example in Appendix F.
+#
+# The 50 per cent concentration is retained here but is excluded from the
+# reproduction analysis in the manual, because survival at that concentration
+# was significantly reduced (section 9.5.2, and the Appendix G example below).
+ceriodaphnia_e1 <- data.frame(
+  conc = rep(c(0, 3, 6, 12, 25, 50), each = 10),
+  replicate = rep(as.character(1:10), times = 6),
+  young = c(
+    20,
+    26,
+    26,
+    23,
+    24,
+    27,
+    26,
+    23,
+    27,
+    24,
+    13,
+    15,
+    14,
+    13,
+    23,
+    26,
+    0,
+    25,
+    26,
+    27,
+    18,
+    22,
+    13,
+    13,
+    23,
+    22,
+    20,
+    22,
+    23,
+    22,
+    14,
+    22,
+    20,
+    23,
+    20,
+    23,
+    25,
+    24,
+    25,
+    21,
+    9,
+    0,
+    9,
+    7,
+    6,
+    10,
+    12,
+    14,
+    9,
+    13,
+    rep(0, 10)
+  )
+)
+
+# Table G.2 -- Ceriodaphnia dubia mortality, used for the Fisher's Exact Test
+# worked example in Appendix G. `exposed` is the number of live adults at the
+# start of the test, which is nine in the control.
+ceriodaphnia_g2 <- data.frame(
+  conc = c(0, 1, 3, 6, 12, 25),
+  dead = c(1, 0, 0, 0, 0, 10),
+  exposed = c(9, 10, 10, 10, 10, 10)
+)
+
+# Table E.4 prints rank sums of 84, 64, 76 and 55. The 6 per cent value is a
+# slip: the ranks the manual itself lists in Table E.3 for that concentration
+# are 3, 7.5, 1.5, 1.5, 11.5, 7.5, 4.5, 7.5, 11.5 and 7.5, which sum to 63.5.
+# The conclusion is unaffected, both being at or below the critical 76.
+rank_sum_check <- function(control, treatment) {
+  combined <- rank(c(control, treatment))
+  sum(combined[-seq_along(control)])
+}
+repro <- split(
+  ceriodaphnia_e1$young[ceriodaphnia_e1$conc < 50],
+  ceriodaphnia_e1$conc[ceriodaphnia_e1$conc < 50]
+)
+stopifnot(isTRUE(all.equal(
+  vapply(repro[-1], function(v) rank_sum_check(repro[[1]], v), numeric(1)),
+  c(`3` = 84, `6` = 63.5, `12` = 76, `25` = 55)
+)))
+
+# Table G.2 totals.
+stopifnot(
+  sum(ceriodaphnia_g2$dead) == 11,
+  sum(ceriodaphnia_g2$exposed) == 59
+)
+
+usethis::use_data(ceriodaphnia_e1, overwrite = TRUE)
+usethis::use_data(ceriodaphnia_g2, overwrite = TRUE)

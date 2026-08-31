@@ -81,15 +81,15 @@ number every time, so the value is obtained by ordinary numerical integration
 instead, which is exact and repeatable. `mvtnorm` is consequently not a
 dependency.
 
-**A note on where decisions are recorded.** Decisions taken during
-implementation, and the evidence for each, are written up in the package
-vignette `vignettes/recreating-toxcalc.qmd`, which ships with the package and
-is the document to read when checking this work against the manuals.
-
 **The point-estimation scope is larger than expected.** The EPA chart for the
 LC50 has four terminal methods, not two. As well as probit analysis and the
 trimmed Spearman-Karber method, it requires a graphical method and a plain
 untrimmed Spearman-Karber method (specification §2.3).
+
+**A note on where decisions are recorded.** Decisions taken during
+implementation, and the evidence for each, are written up in the package
+vignette `vignettes/recreating-toxcalc.qmd`, which ships with the package and
+is the document to read when checking this work against the manuals.
 
 ## How the data goes in
 
@@ -136,7 +136,7 @@ and PMSD that describe how sensitive the test was. *Done:* reproduces the
 manuals' printed statistics for both, and the Appendix C minimum significant
 difference.
 
-**Phase 3 — the individual hypothesis tests.** *Purpose:* the seven tests the
+**Phase 3 — the individual hypothesis tests. Complete.** *Purpose:* the seven tests the
 chart can select, each callable and testable on its own. *Done:* each reproduces
 its worked example in the manuals.
 

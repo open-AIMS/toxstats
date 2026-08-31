@@ -20,6 +20,7 @@ Depends:
     R (>= 4.1)
 Imports:
     chk (>= 0.10.0),
+    kSamples (>= 1.2.10),
     stats
 Suggests:
     boot,

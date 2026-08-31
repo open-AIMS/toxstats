@@ -121,7 +121,7 @@ a hand-calculation aid from before this was available in software.
 different branches of the flowchart. The package reports both the statistic and
 the p-value so that such a case is visible.
 
-### 4. Three printed statistics are not reproducible from the manual's own data
+### 4. Six printed values do not follow from the manual's own data
 
 The manuals were prepared for hand calculation, and several worked examples
 carry intermediate values forward after rounding them. Recomputing at full
@@ -189,6 +189,45 @@ correct and 0.087 is a typographical error.
 pmsd(fathead_c1, response = "weight", bounds = "fathead_growth")
 ```
 
+
+#### Appendix D Table D.3: a within mean square of 0.0029 against 0.0079
+
+Table D.3 gives the within sum of squares as 0.111 on 14 degrees of freedom and
+then the mean square as 0.0029. The quotient is 0.0079. The manual's own printed
+`t` values were computed from 0.0079, so the mean square as printed is the
+error and everything downstream of it is right.
+
+```{r}
+#| label: appendix-d
+lost <- fathead_c1[-19, ]  # Appendix D loses one 256 ug/L replicate
+fit <- bonferroni_t(lost, response = "weight")
+c(sum_of_squares = fit$sw^2 * fit$df, mean_square = fit$sw^2)
+```
+
+#### Appendix D Table D.4: a t value of 0.220 against 0.270
+
+For the 64 µg/L comparison the manual prints 0.220. Its own concentration means
+of 0.677 and 0.660 and its own pooled standard deviation give 0.270, and the
+other three comparisons agree with the manual to within rounding. Both values
+are far below the 2.510 critical value.
+
+```{r}
+#| label: appendix-d-t
+fit$comparisons[, c("conc", "statistic")]
+```
+
+#### Appendix E Table E.4: a rank sum of 64 against 63.5
+
+The ranks the manual itself lists in Table E.3 for the 6 per cent concentration
+are 3, 7.5, 1.5, 1.5, 11.5, 7.5, 4.5, 7.5, 11.5 and 7.5. Those sum to 63.5, not
+the 64 printed in Table E.4. Both are at or below the critical rank sum of 76,
+so the concentration is significant either way.
+
+```{r}
+#| label: appendix-e
+repro <- ceriodaphnia_e1[ceriodaphnia_e1$conc < 50, ]
+steel(repro, response = "young")$comparisons[, c("conc", "rank_sum")]
+```
 ### 5. Appendix C does not use the data it says it does
 
 Appendix C states that its data are "the same data used in Appendices B and

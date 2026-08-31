@@ -116,3 +116,73 @@
 #'
 #' @source US EPA (2002) EPA-821-R-02-013, Table 6.
 "epa_pmsd_bounds"
+
+#' Ceriodaphnia dubia reproduction, EPA Table E.1
+#'
+#' Reproduction data from a *Ceriodaphnia dubia* seven-day chronic test, used
+#' for the Steel's Many-One Rank Test worked example in Appendix E of the EPA
+#' chronic freshwater manual, and, with two values removed, for the Wilcoxon
+#' Rank Sum worked example in Appendix F.
+#'
+#' @details
+#' The 50 per cent concentration is included here but is **excluded from the
+#' reproduction analysis** in the manual, because survival at that
+#' concentration was significantly reduced (section 9.5.2; see
+#' [ceriodaphnia_g2] and [fisher_exact()]). Subset to `conc < 50` to reproduce
+#' the worked example.
+#'
+#' Appendix F uses the same data with two males presumed to have occurred, one
+#' in the control and one at 12 per cent, giving unequal replication. Remove
+#' the control replicate 1 and the 12 per cent replicate 5 to reproduce it.
+#'
+#' The manual reports the following for the Appendix E example:
+#'
+#' * rank sums of 84, 64, 76 and 55 against a critical rank sum of 76;
+#' * NOEC 3 per cent and LOEC 6 per cent.
+#'
+#' The printed rank sum of 64 at 6 per cent is a slip. The ranks the manual
+#' itself lists in Table E.3 for that concentration sum to 63.5. The conclusion
+#' is unaffected, both being at or below the critical value.
+#'
+#' For the Appendix F example the manual reports rank sums of 79, 57, 58 and
+#' 55, critical values of 72 for the ten-replicate concentrations and 60 for
+#' the nine-replicate one, and the same NOEC and LOEC.
+#'
+#' @format A data frame with 60 rows and 3 columns:
+#' \describe{
+#'   \item{conc}{effluent concentration, per cent}
+#'   \item{replicate}{replicate label, 1 to 10}
+#'   \item{young}{number of young produced}
+#' }
+#'
+#' @source US EPA (2002) EPA-821-R-02-013, Table E.1.
+"ceriodaphnia_e1"
+
+#' Ceriodaphnia dubia mortality, EPA Table G.2
+#'
+#' Survival data from a *Ceriodaphnia dubia* survival and reproduction test,
+#' used for the Fisher's Exact Test worked example in Appendix G of the EPA
+#' chronic freshwater manual. One row per concentration, already pooled across
+#' replicates, as the manual presents it.
+#'
+#' @details
+#' `exposed` is the number of live adults at the beginning of the test, which
+#' is nine in the control rather than ten.
+#'
+#' The manual concludes that only the 25 per cent concentration differs
+#' significantly from the control, giving a NOEC of 12 per cent and a LOEC of
+#' 25 per cent for survival. That result is what excludes the 50 per cent
+#' concentration from the reproduction analysis of [ceriodaphnia_e1].
+#'
+#' Appendix G applies a pairwise error rate of 0.05 rather than an
+#' experiment-wise one, because Fisher's Exact Test is itself conservative.
+#'
+#' @format A data frame with 6 rows and 3 columns:
+#' \describe{
+#'   \item{conc}{effluent concentration, per cent}
+#'   \item{dead}{number of adults dead at the end of the test}
+#'   \item{exposed}{number of live adults at the start of the test}
+#' }
+#'
+#' @source US EPA (2002) EPA-821-R-02-013, Table G.2.
+"ceriodaphnia_g2"
