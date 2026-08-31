@@ -447,3 +447,38 @@ was added to `DESCRIPTION` because pkgdown requires it there.
 R CMD check clean at 0/0/0; 536 assertions passing.
 
 ---
+**User:** let's use toxstats
+
+**Claude:** Renamed the package from `toxcalc` to `toxstats`, and the interface
+from `shinytoxcalc` to `shinytoxstats`.
+
+**Why the original name had to go.** `toxcalc` collided with two things. The
+Tidepool commercial product it recreates, whose trademark position could not be
+cleared from public sources, and `USEPA/toxcalc`, an archived EPA repository for
+an unrelated human-health dose-conversion calculator. Adding an R suffix was
+considered and rejected: infringement turns on likelihood of confusion rather
+than identity, and "ToxCalc for R" reads as an official port, which implies more
+affiliation rather than less. It would also be inaccurate, since this is an
+independent implementation from the EPA manuals rather than a port of anything.
+
+**Why an intermediate name was also rejected.** `wetstats` was implemented and
+then abandoned on the user's objection that it implies the package serves only
+Whole Effluent Toxicity testing. That objection is correct. Dunnett's procedure,
+Steel's test, probit, the trimmed Spearman-Karber method and linear
+interpolation apply to any concentration-response toxicity data with a control.
+The EPA WET manuals are where the methods and the selection rules are
+*specified*, not the only setting they apply to. The Title and Description were
+rewritten accordingly, and now lead with what the package computes rather than
+with the regulatory context it came from.
+
+`toxcalc()` became `tox_test()`, `toxcalc_data()` became `tox_data()`, and the
+classes followed. Every reference to **ToxCalc the software** was deliberately
+left alone: the package still describes itself as recreating it, which is
+nominative fair use and belongs in the description rather than in the name.
+
+Two renames in succession across nineteen R files, the test suite, the vignette
+and both notes documents, with 536 and 101 assertions passing after each and
+R CMD check clean on both packages. The test suites are what made a mechanical
+rename of this size safe to attempt at all.
+
+---

@@ -40,7 +40,7 @@ statistic, the answer, the consequence, and the section of the EPA
 manual that justifies it.
 
 ``` r
-summary(toxcalc(fathead_c1, response = "weight",
+summary(tox_test(fathead_c1, response = "weight",
                 pmsd_bounds = "fathead_growth"))
 #> EPA WET hypothesis test
 #> Flowchart: EPA-821-R-02-013 Figure 2
@@ -76,7 +76,7 @@ point estimate together. `branch = "both"` returns them from one call,
 and `as.data.frame()` gives one tidy row per endpoint.
 
 ``` r
-fit <- toxcalc(ceriodaphnia_m1, response = "young",
+fit <- tox_test(ceriodaphnia_m1, response = "young",
                branch = "both", seed = 42)
 as.data.frame(fit)[, c("endpoint", "value", "lower", "upper", "method")]
 #>   endpoint     value    lower    upper method
@@ -146,8 +146,8 @@ and `R CMD check` is clean. Still to come: the marine manual’s
 endpoints, designs with more than one control, and the remaining
 alternative tests.
 
-See `notes/TOXCALC-human.md` for the plan and `notes/TOXCALC-claude.md`
-for the specification.
+See `notes/TOXSTATS-human.md` for the plan and
+`notes/TOXSTATS-claude.md` for the specification.
 
 ## Installation
 
@@ -155,7 +155,7 @@ for the specification.
 if (!requireNamespace("remotes")) {
   install.packages("remotes")
 }
-remotes::install_github("beckyfisher/toxcalc")
+remotes::install_github("beckyfisher/toxstats")
 ```
 
 ## Standing and licence
