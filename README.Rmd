@@ -138,6 +138,20 @@ if (!requireNamespace("remotes")) {
 remotes::install_github("beckyfisher/toxcalc")
 ```
 
+## Standing and licence
+
+This package is **not** produced, endorsed, validated or reviewed by the US
+Environmental Protection Agency, and it is not affiliated with Tidepool
+Scientific or with the ToxCalc software it recreates. It implements the methods
+described in the EPA method manuals, which are US Government works, and it is
+offered without warranty of any kind. A laboratory remains responsible for
+satisfying itself, and its regulator, that an analysis is fit for the use it is
+put to.
+
+No table of critical values that the EPA manuals reproduce from a third-party
+source is included here. Those values are computed instead; the reasoning is in
+the vignette.
+
 ## References
 
 - US EPA (2002) *Methods for Measuring the Acute Toxicity of Effluents and

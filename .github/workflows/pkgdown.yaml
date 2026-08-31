@@ -42,8 +42,22 @@ jobs:
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
+      # The built site is always kept as a downloadable artifact. GitHub Pages
+      # is not available for a private repository on a free personal account,
+      # so on a private repo the deploy step below is skipped and this is the
+      # only way to get at the site.
+      - name: Upload the site as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkgdown-site
+          path: docs
+          retention-days: 14
+
+      # Skipped while the repository is private, because Pages would not serve
+      # the result. Remove the condition, or make the repository public, to
+      # publish the site.
       - name: Deploy to GitHub pages 🚀
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event.repository.private == false
         uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4.8.0
         with:
           clean: false
