@@ -12,8 +12,7 @@ devtools::document()
 # it if quarto::quarto_version() errors.
 if (inherits(try(quarto::quarto_version(), silent = TRUE), "try-error")) {
   Sys.setenv(
-    QUARTO_PATH =
-      "C:/Program Files/Positron/resources/app/quarto/bin/quarto.exe"
+    QUARTO_PATH = "C:/Program Files/Positron/resources/app/quarto/bin/quarto.exe"
   )
 }
 

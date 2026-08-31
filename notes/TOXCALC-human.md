@@ -140,7 +140,7 @@ difference.
 chart can select, each callable and testable on its own. *Done:* each reproduces
 its worked example in the manuals.
 
-**Phase 4 — the chart engine and the audit trail.** *Purpose:* the actual
+**Phase 4 — the chart engine and the audit trail. Complete.** *Purpose:* the actual
 recreation of what ToxCalc did — selecting a test automatically and recording
 why. *Done:* two complete worked examples run end to end and select the same
 test the manual selects. **This is the first version worth releasing.**

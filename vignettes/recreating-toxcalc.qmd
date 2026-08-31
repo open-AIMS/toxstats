@@ -331,6 +331,85 @@ iteration, and takes an order-statistic interval.
 requires the external MPFR and GMP libraries, which makes it impractical to
 install on Windows.
 
+### 11. The flowchart is data, not control flow
+
+**Decision.** Each EPA decision chart is stored as a data frame of branch
+points, and a small engine walks it. The alternative, nesting `if` statements
+inside the driver, was rejected.
+
+**Reasoning.** Three things follow from holding the chart as data. Each branch
+point can be tested on its own, without running an analysis end to end. The
+traversal can be recorded without the recording being tangled into the logic,
+which is what makes the audit trail trustworthy rather than a narration written
+alongside the code. And a second chart — the acute manual has three more — is
+added without touching the engine.
+
+The chart carries the manual section for every branch point, so the citation in
+the printed output is not a comment that can drift away from the code:
+
+```{r}
+#| label: chart
+chart <- toxcalc:::flowchart_hypothesis_multi()
+chart[, c("node", "yes", "no", "reference")]
+```
+
+Two details of the chart are worth pointing out because they are easy to get
+wrong when reading Figure 2 quickly. The normality branch goes **directly** to
+the replication question when it fails: the variance test is not reached at all.
+And there is an explicit `@no_valid_test` terminal, because a design whose
+residuals are not normal and which has fewer than four replicates has no test
+the manual sanctions — section 9.4.5.2 rules out the non-parametric branch. That
+case raises an error rather than falling through to something plausible.
+
+```{r}
+#| label: end-to-end
+summary(toxcalc(fathead_c1, response = "weight",
+                pmsd_bounds = "fathead_growth"))
+```
+
+### 12. Two rules can overturn a test result
+
+Both are in the manual and both are easy to miss, because neither is on the
+flowchart.
+
+**Exclusions, section 9.5.2.** A concentration at which every replicate showed a
+complete response is excluded from the no-observed-effect concentration, though
+it is retained for point estimation. That one is applied automatically for a
+quantal endpoint. A concentration at which *survival* was significantly reduced
+is excluded from the analysis of a **sublethal** endpoint, which needs a
+separate survival analysis and so cannot be inferred; it is passed to `exclude`.
+The Appendix E example does exactly this, dropping the 50 per cent
+concentration from the reproduction analysis on the strength of the Appendix G
+survival result.
+
+**The lower PMSD bound, section 10.2.8.2.5.** A concentration shall **not** be
+declared toxic if its relative difference from the control is smaller than the
+lower bound published for the test method, whatever the hypothesis test
+concluded. This reverses a significant result after the fact. It is applied only
+when `pmsd_bounds` is given, and every concentration it reverses gets its own
+row in the decision trail, so the reversal is visible rather than silent.
+
+### 13. Overriding the flowchart is possible but never quiet
+
+**Decision.** `test` forces a particular test. When it disagrees with the
+flowchart a warning is raised, `overridden` is set on the result, an extra row
+is added to the decision trail, and `print()` reports it above the endpoints.
+
+**Reasoning.** A statistician sometimes has good reason to overrule a borderline
+assumption test. What must not happen is that a forced analysis is later read as
+the analysis the manual prescribes. Making the override loud costs the user
+nothing and removes that risk.
+
+```{r}
+#| label: override
+fit <- withCallingHandlers(
+  toxcalc(fathead_c1, response = "weight", test = "steel"),
+  warning = function(w) invokeRestart("muffleWarning")
+)
+c(selected_by_flowchart = fit$selected, actually_run = fit$comparison$test)
+decisions(fit)[decisions(fit)$node == "override", c("outcome", "reference")]
+```
+
 ## Still open
 
 These are recorded rather than resolved, and will be settled against the

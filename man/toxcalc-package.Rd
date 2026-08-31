@@ -2,7 +2,6 @@
 % Please edit documentation in R/toxcalc-package.R
 \docType{package}
 \name{toxcalc-package}
-\alias{toxcalc}
 \alias{toxcalc-package}
 \title{toxcalc: US EPA Whole Effluent Toxicity Statistical Methods}
 \description{

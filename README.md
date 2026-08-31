@@ -43,14 +43,48 @@ sources.
 
 ## Status
 
-**Experimental, under active development.** Phases 0 to 3 are complete: the data
-layer, the EPA transformations and monotone smoothing, the normality and
-homogeneity-of-variance tests, the minimum significant difference, and the seven
-hypothesis tests the EPA flowchart can select. Each reproduces its worked
-example in the manuals, and `R CMD check` is clean at every phase.
+**Experimental, under active development.** The hypothesis-testing branch is
+complete and usable. `toxcalc()` walks the EPA flowchart, selects the test the
+manual directs, runs it, and returns the NOEC, LOEC, MSD and PMSD together with
+the decision trail that justifies the selection.
 
-Still to come: the flowchart engine that selects among those tests and records
-why, and the point-estimation methods for the LC50 and ICp.
+```r
+library(toxcalc)
+summary(toxcalc(fathead_c1, response = "weight",
+                pmsd_bounds = "fathead_growth"))
+```
+
+```
+EPA WET hypothesis test
+Flowchart: EPA-821-R-02-013 Figure 2
+
+   1  Is the response a proportion requiring transformation?
+      no transformation needed
+      (EPA-821-R-02-013 Appendix B, section 4.2)
+   2  Are the pooled within-group residuals normally distributed?
+      0.9507, p = 0.378 -> residuals consistent with normality
+      (EPA-821-R-02-013 Appendix B, section 2.1)
+   3  Are the variances homogeneous across concentrations?
+      7.856, p = 0.097 -> variances not significantly different
+      (EPA-821-R-02-013 Appendix B, section 3)
+   4  Is replication equal across all concentrations?
+      4, 4, 4, 4, 4 replicates, balanced
+      (EPA-821-R-02-013 Figure 2)
+   5  Which test was run?
+      Dunnett's procedure
+      (EPA-821-R-02-013 Appendix C)
+
+  NOEC 128    LOEC 256
+  MSD  0.1618    PMSD 23.9 per cent (EPA bounds 12 to 30: within)
+```
+
+Both of the manual's multi-concentration worked examples run end to end and the
+flowchart independently selects the same test the manual selects: Dunnett's
+procedure for the Appendix C growth data, and Steel's Many-One Rank Test for
+the Appendix E reproduction data. `R CMD check` is clean at every phase.
+
+Still to come: the point-estimation methods for the LC50 and ICp, and Williams'
+test.
 
 The vignette `vignettes/recreating-toxcalc.qmd` records every point at which the
 source material was ambiguous, internally inconsistent, or at odds with modern

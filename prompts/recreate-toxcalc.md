@@ -175,3 +175,62 @@ than the source tree.
 R CMD check clean at 0/0/0; 254 assertions passing.
 
 ---
+**User:** yes continue
+
+**Claude:** Implemented Phase 4, the flowchart engine and the `toxcalc()`
+driver. This is the part that actually recreates what ToxCalc did: selecting a
+test automatically and recording why.
+
+**The chart is data, not control flow.** `R/flowchart.R` holds the EPA Figure 2
+chart as a data frame of branch points, with columns `node`, `question`,
+`rule`, `yes`, `no` and `reference`, and `walk_flowchart()` traverses it. The
+alternative, nesting `if` statements in the driver, was rejected for three
+reasons: each branch point can be tested on its own; the traversal can be
+recorded without the recording being tangled into the logic, which is what makes
+the audit trail trustworthy rather than a narration maintained alongside the
+code; and the three further charts in the acute manual can be added without
+touching the engine. The manual section for each branch point lives in the chart
+itself, so the citation in the printed output cannot drift from the code.
+
+**Two details of Figure 2 that are easy to misread** are encoded explicitly. The
+normality branch goes directly to the replication question when it fails, so the
+variance test is not reached at all. And there is an `@no_valid_test` terminal,
+because a design whose residuals are not normal and which has fewer than four
+replicates has no test the manual sanctions, section 9.4.5.2 having ruled out
+the non-parametric branch; that case raises an error rather than falling through
+to something plausible.
+
+**Both worked examples run end to end, and the chart independently selects the
+same test the manual selects.** For the Appendix C growth data the residuals are
+normal (W = 0.951, p = 0.378) and the variances homogeneous (B = 7.856,
+p = 0.097) with balanced replication, so Dunnett's procedure is selected,
+returning NOEC 128, LOEC 256, MSD 0.162 and PMSD 23.9 per cent, within the
+Table 6 bounds. For the Appendix E reproduction data with the 50 per cent
+concentration excluded, normality fails (W = 0.928, p = 0.0047) with ten
+balanced replicates, so Steel's Many-One Rank Test is selected, returning
+NOEC 3 and LOEC 6.
+
+**Two rules that overturn a test result** were implemented, neither of which
+appears on the flowchart. Section 9.5.2 excludes a concentration at which every
+replicate showed a complete response, applied automatically for a quantal
+endpoint, and excludes from a sublethal analysis any concentration at which
+survival was significantly reduced, which needs a separate survival analysis and
+so is passed through `exclude`. Section 10.2.8.2.5 states that a concentration
+shall not be declared toxic if its relative difference from the control is below
+the lower PMSD bound, whatever the test concluded; this reverses a significant
+result after the fact, and every reversal gets its own row in the decision
+trail.
+
+**Overrides are possible but never quiet.** Passing `test` runs that test
+whatever the chart selected; when the two disagree a warning is raised,
+`overridden` is set, a row is added to the trail, and `print()` reports it above
+the endpoints. A forced analysis can therefore never be read as the analysis the
+manual prescribes.
+
+The two summary outputs are covered by testthat snapshot tests, a departure from
+`toxval`, which uses none, but appropriate for report-style output whose exact
+wording is part of what is being delivered.
+
+R CMD check clean at 0/0/0; 338 assertions passing.
+
+---
