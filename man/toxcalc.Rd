@@ -13,7 +13,11 @@ toxcalc(
   alpha_assumption = 0.01,
   test = NULL,
   exclude = NULL,
-  pmsd_bounds = NULL
+  pmsd_bounds = NULL,
+  branch = c("hypothesis", "both"),
+  p = NULL,
+  nboot = 200,
+  seed = NULL
 )
 
 \method{summary}{toxcalc}(object, ...)
@@ -42,6 +46,23 @@ hypothesis test, over and above those excluded automatically.}
 
 \item{pmsd_bounds}{Optional. Passed to \code{\link[=pmsd]{pmsd()}}; supplying it also enables
 the section 10.2.8.2.5 override.}
+
+\item{branch}{\code{"hypothesis"} (the default) gives the NOEC, LOEC, MSD and
+PMSD. \code{"both"} adds a point estimate alongside them, which is what a
+laboratory report usually contains: a median lethal concentration through
+\code{\link[=lc50]{lc50()}} for a quantal endpoint, or an inhibition concentration through
+\code{\link[=icp]{icp()}} for a continuous one.
+
+There is no \code{"point"} option, because \code{\link[=lc50]{lc50()}} and \code{\link[=icp]{icp()}} already provide
+that directly and are easier to find. The default is not \code{"both"} because
+the point branch runs a bootstrap for a continuous endpoint, which takes
+appreciably longer, so it is asked for rather than assumed.}
+
+\item{p}{Percentages for the point branch, or \code{NULL} for the default of
+whichever method applies.}
+
+\item{nboot, seed}{Passed to \code{\link[=icp]{icp()}} when the point branch applies to a
+continuous endpoint.}
 
 \item{object}{A \code{toxcalc} object.}
 
@@ -116,7 +137,7 @@ printed as though the manual had chosen it.
 \itemize{
 \item \code{summary(toxcalc)}: Print the decision trail above the endpoints.
 
-\item \code{as.data.frame(toxcalc)}: Return the endpoints as a one-row data frame.
+\item \code{as.data.frame(toxcalc)}: Return every endpoint as one tidy row.
 
 }}
 \examples{

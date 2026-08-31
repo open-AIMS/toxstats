@@ -61,6 +61,20 @@
 #'   hypothesis test, over and above those excluded automatically.
 #' @param pmsd_bounds Optional. Passed to [pmsd()]; supplying it also enables
 #'   the section 10.2.8.2.5 override.
+#' @param branch `"hypothesis"` (the default) gives the NOEC, LOEC, MSD and
+#'   PMSD. `"both"` adds a point estimate alongside them, which is what a
+#'   laboratory report usually contains: a median lethal concentration through
+#'   [lc50()] for a quantal endpoint, or an inhibition concentration through
+#'   [icp()] for a continuous one.
+#'
+#'   There is no `"point"` option, because [lc50()] and [icp()] already provide
+#'   that directly and are easier to find. The default is not `"both"` because
+#'   the point branch runs a bootstrap for a continuous endpoint, which takes
+#'   appreciably longer, so it is asked for rather than assumed.
+#' @param p Percentages for the point branch, or `NULL` for the default of
+#'   whichever method applies.
+#' @param nboot,seed Passed to [icp()] when the point branch applies to a
+#'   continuous endpoint.
 #'
 #' @return An object of class `toxcalc`, a list with elements `data`,
 #'   `working`, `decisions`, `assumptions`, `comparison`, `msd`, `pmsd`,
@@ -86,8 +100,13 @@ toxcalc <- function(
   alpha_assumption = 0.01,
   test = NULL,
   exclude = NULL,
-  pmsd_bounds = NULL
+  pmsd_bounds = NULL,
+  branch = c("hypothesis", "both"),
+  p = NULL,
+  nboot = 200,
+  seed = NULL
 ) {
+  branch <- match.arg(branch)
   chk::chk_number(alpha)
   chk::chk_range(alpha, c(0, 1))
   chk::chk_number(alpha_assumption)
@@ -190,10 +209,18 @@ toxcalc <- function(
   )
   rownames(trail) <- NULL
 
+  point <- if (branch == "hypothesis") {
+    NULL
+  } else {
+    point_branch(x, p = p, alpha = alpha, nboot = nboot, seed = seed)
+  }
+
   structure(
     list(
       data = x,
       working = walked$state$working,
+      point = point,
+      branch = branch,
       decisions = trail,
       assumptions = walked$state$assumptions,
       comparison = comparison,
@@ -470,17 +497,32 @@ print_endpoints <- function(x) {
     }
     cat("\n")
   }
+  point <- point_estimates(x)
+  if (!is.null(point)) {
+    cat(
+      "
+"
+    )
+    out <- point[, c("endpoint", "estimate", "lower", "upper")]
+    out[] <- lapply(out, function(column) {
+      if (is.numeric(column)) signif(column, 5) else column
+    })
+    print(out, row.names = FALSE)
+  }
   if (!x$comparison$monotone) {
     cat(
-      "\n  Note: the pattern of significance is not monotone. Section 9.6.5.1\n",
-      "  advises that such results be used with caution.\n",
+      "
+  Note: the pattern of significance is not monotone. Section 9.6.5.1
+",
+      "  advises that such results be used with caution.
+",
       sep = ""
     )
   }
   invisible(x)
 }
 
-#' @describeIn toxcalc Return the endpoints as a one-row data frame.
+#' @describeIn toxcalc Return every endpoint as one tidy row.
 #'
 #' @param row.names Unused.
 #' @param optional Unused.
@@ -488,16 +530,82 @@ print_endpoints <- function(x) {
 #' @export
 as.data.frame.toxcalc <- function(x, row.names = NULL, optional = FALSE, ...) {
   chk::chk_unused(...)
-  data.frame(
-    test = x$comparison$test,
-    selected_by_flowchart = x$selected,
-    overridden = x$overridden,
-    transform = x$transform,
-    noec = x$noec,
-    loec = x$loec,
-    msd = if (is.null(x$pmsd)) NA_real_ else unname(x$pmsd$msd$msd[1]),
-    pmsd = if (is.null(x$pmsd)) NA_real_ else unname(x$pmsd$pmsd[1]),
-    conc_units = x$data$conc_units,
+
+  hypothesis <- data.frame(
+    endpoint = c("NOEC", "LOEC", "MSD", "PMSD"),
+    value = c(
+      x$noec,
+      x$loec,
+      if (is.null(x$pmsd)) NA_real_ else unname(x$pmsd$msd$msd[1]),
+      if (is.null(x$pmsd)) NA_real_ else unname(x$pmsd$pmsd[1])
+    ),
+    lower = NA_real_,
+    upper = NA_real_,
+    method = x$comparison$test,
     stringsAsFactors = FALSE
   )
+
+  point <- point_estimates(x)
+  if (!is.null(point)) {
+    hypothesis <- rbind(
+      hypothesis,
+      data.frame(
+        endpoint = point$endpoint,
+        value = point$estimate,
+        lower = point$lower,
+        upper = point$upper,
+        method = if (inherits(x$point, "toxcalc_lc50")) {
+          x$point$selected
+        } else {
+          "icp"
+        },
+        stringsAsFactors = FALSE
+      )
+    )
+  }
+
+  hypothesis$selected_by_flowchart <- x$selected
+  hypothesis$overridden <- x$overridden
+  hypothesis$transform <- x$transform
+  hypothesis$conc_units <- x$data$conc_units
+  rownames(hypothesis) <- NULL
+  hypothesis
+}
+
+#' Run the point-estimation branch appropriate to the endpoint
+#'
+#' A quantal endpoint gets a median lethal concentration from the Figure 6
+#' chart; a continuous one gets an inhibition concentration by linear
+#' interpolation. Either way the **original** data is used, with nothing
+#' excluded: section 9.5.2 retains for point estimation the concentrations it
+#' drops from the no-observed-effect concentration.
+#'
+#' @param x The unmodified `toxcalc_data` object.
+#' @param p Percentages to estimate, or NULL for the default of each method.
+#' @param alpha Significance level, used only by the probit fit check.
+#' @param nboot,seed Passed to [icp()] for a continuous endpoint.
+#' @return A `toxcalc_lc50` or a `toxcalc_estimate`.
+#' @noRd
+point_branch <- function(x, p, alpha, nboot, seed) {
+  if (x$type == "quantal") {
+    lc50(x, p = if (is.null(p)) c(1, 50) else p, alpha = alpha)
+  } else {
+    icp(x, p = if (is.null(p)) 25 else p, nboot = nboot, seed = seed)
+  }
+}
+
+#' The point-estimation results as a data frame, or an empty frame
+#'
+#' @param x A `toxcalc` object.
+#' @return A data frame with the same columns `endpoint_frame()` produces.
+#' @noRd
+point_estimates <- function(x) {
+  if (is.null(x$point)) {
+    return(NULL)
+  }
+  if (inherits(x$point, "toxcalc_lc50")) {
+    x$point$estimate$estimates
+  } else {
+    x$point$estimates
+  }
 }

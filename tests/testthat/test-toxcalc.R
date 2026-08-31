@@ -290,18 +290,19 @@ test_that("MSD is computed even when a non-parametric test was selected", {
 
 # methods --------------------------------------------------------------------
 
-test_that("as.data.frame returns one tidy row", {
+test_that("as.data.frame returns one tidy row per endpoint", {
   out <- as.data.frame(
     toxcalc(fathead_c1, response = "weight", pmsd_bounds = "fathead_growth")
   )
 
-  expect_equal(nrow(out), 1L)
-  expect_equal(out$test, "dunnett")
-  expect_equal(out$selected_by_flowchart, "dunnett")
-  expect_false(out$overridden)
-  expect_equal(out$noec, 128)
-  expect_equal(out$loec, 256)
-  expect_equal(round(out$msd, 3), 0.162)
+  expect_equal(out$endpoint, c("NOEC", "LOEC", "MSD", "PMSD"))
+  expect_equal(out$value[out$endpoint == "NOEC"], 128)
+  expect_equal(out$value[out$endpoint == "LOEC"], 256)
+  expect_equal(round(out$value[out$endpoint == "MSD"], 3), 0.162)
+  expect_equal(round(out$value[out$endpoint == "PMSD"], 1), 23.9)
+  expect_true(all(out$method == "dunnett"))
+  expect_true(all(out$selected_by_flowchart == "dunnett"))
+  expect_false(any(out$overridden))
 })
 
 test_that("print is brief and summary carries the trail", {
@@ -367,4 +368,128 @@ test_that("walk_flowchart rejects an unknown node", {
     ),
     regexp = "Unknown flowchart node"
   )
+})
+
+# running both branches ------------------------------------------------------
+
+test_that("the default runs the hypothesis branch only", {
+  fit <- toxcalc(fathead_c1, response = "weight")
+
+  expect_equal(fit$branch, "hypothesis")
+  expect_null(fit$point)
+  expect_equal(as.data.frame(fit)$endpoint, c("NOEC", "LOEC", "MSD", "PMSD"))
+})
+
+test_that("a continuous endpoint takes the interpolation branch", {
+  fit <- toxcalc(
+    ceriodaphnia_m1,
+    response = "young",
+    branch = "both",
+    nboot = 60,
+    seed = 42
+  )
+
+  expect_s3_class(fit$point, "toxcalc_estimate")
+  expect_match(fit$point$method, "Linear interpolation")
+  # The Appendix M estimate, reached through the driver rather than directly.
+  expect_equal(round(fit$point$estimates$estimate, 4), 8.5715)
+})
+
+test_that("a quantal endpoint takes the LC50 branch", {
+  raw <- quantal_design()
+  fit <- toxcalc(
+    raw,
+    response = "affected",
+    n_exposed = "exposed",
+    type = "quantal",
+    branch = "both"
+  )
+
+  expect_s3_class(fit$point, "toxcalc_lc50")
+  expect_true(fit$point$selected %in% unname(toxcalc:::lc50_terminals()))
+  expect_equal(nrow(fit$point$estimate$estimates), 2L)
+})
+
+test_that("a design with one replicate per concentration is refused clearly", {
+  # acute_table20 is pooled, one row per concentration, so there is no
+  # within-concentration variation and no hypothesis test is possible. The
+  # error should say so rather than surfacing one from shapiro.test.
+  expect_error(
+    toxcalc(
+      acute_table20,
+      response = "probit",
+      n_exposed = "exposed",
+      type = "quantal"
+    ),
+    regexp = "no variation, so normality cannot be tested"
+  )
+  # The point-estimation methods handle it, which is what the message says.
+  expect_no_error(
+    lc50(
+      acute_table20,
+      response = "probit",
+      n_exposed = "exposed",
+      type = "quantal"
+    )
+  )
+})
+
+test_that("point estimation uses all the data, exclusions and all", {
+  # Section 9.5.2 drops a completely responding concentration from the NOEC
+  # but keeps it for point estimation, so the two branches see different data.
+  raw <- quantal_design()
+  raw$affected[raw$conc == 40] <- 10
+  fit <- toxcalc(
+    raw,
+    response = "affected",
+    n_exposed = "exposed",
+    type = "quantal",
+    branch = "both"
+  )
+
+  expect_equal(fit$excluded$conc, 40)
+  expect_false(40 %in% fit$working$pooled$conc)
+  # The point branch still sees it.
+  expect_true(40 %in% fit$point$data$pooled$conc)
+})
+
+test_that("both branches appear in the tidy output together", {
+  fit <- toxcalc(
+    ceriodaphnia_m1,
+    response = "young",
+    branch = "both",
+    nboot = 60,
+    seed = 42
+  )
+  out <- as.data.frame(fit)
+
+  expect_equal(out$endpoint, c("NOEC", "LOEC", "MSD", "PMSD", "IC25"))
+  # Only the point estimate carries an interval.
+  expect_true(all(is.na(out$lower[out$endpoint != "IC25"])))
+  expect_false(is.na(out$lower[out$endpoint == "IC25"]))
+  expect_equal(out$method[out$endpoint == "IC25"], "icp")
+})
+
+test_that("p selects which point estimates are reported", {
+  fit <- toxcalc(
+    ceriodaphnia_m1,
+    response = "young",
+    branch = "both",
+    p = c(10, 25, 50),
+    nboot = 60,
+    seed = 42
+  )
+  expect_equal(fit$point$estimates$endpoint, c("IC10", "IC25", "IC50"))
+})
+
+test_that("print shows the point estimate when there is one", {
+  fit <- toxcalc(
+    ceriodaphnia_m1,
+    response = "young",
+    branch = "both",
+    nboot = 60,
+    seed = 42
+  )
+  expect_output(print(fit), "IC25")
+  expect_output(print(fit), "NOEC")
 })

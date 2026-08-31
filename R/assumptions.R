@@ -89,6 +89,14 @@ shapiro_wilk_result <- function(residuals, alpha) {
       " were supplied."
     )
   }
+  if (stats::sd(residuals) == 0) {
+    chk::abort_chk(
+      "The residuals have no variation, so normality cannot be tested. This ",
+      "usually means there is a single replicate at every concentration, ",
+      "which supports no hypothesis test at all; the point-estimation ",
+      "methods work on pooled counts and do not need replication."
+    )
+  }
   fit <- stats::shapiro.test(residuals)
   normal <- fit$p.value > alpha
 

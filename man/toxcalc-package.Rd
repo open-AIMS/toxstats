@@ -10,6 +10,7 @@ An open-source implementation of the statistical methods specified in the US Env
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://beckyfisher.github.io/toxcalc}
   \item \url{https://github.com/beckyfisher/toxcalc}
   \item Report bugs at \url{https://github.com/beckyfisher/toxcalc/issues}
 }

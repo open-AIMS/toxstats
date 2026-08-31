@@ -158,7 +158,7 @@ IC25 of 8.57% and IC50 of 10.89%.
 method, kept separate so its status is unambiguous. *Done:* reproduces Williams'
 own published examples.
 
-**Phase 8 — the top-level driver and documentation.** *Purpose:* one function
+**Phase 8 — the top-level driver and documentation. Complete.** *Purpose:* one function
 that runs either branch, plus the README and website. *Done:* every worked
 example in both manuals runs through the single driver.
 

@@ -14,7 +14,8 @@ Description: An open-source implementation of the statistical methods
     recording which test was selected and which manual section justifies
     the choice.
 License: GPL (>= 2)
-URL: https://github.com/beckyfisher/toxcalc
+URL: https://beckyfisher.github.io/toxcalc,
+    https://github.com/beckyfisher/toxcalc
 BugReports: https://github.com/beckyfisher/toxcalc/issues
 Depends:
     R (>= 4.1)

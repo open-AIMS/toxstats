@@ -1,6 +1,83 @@
 url: https://beckyfisher.github.io/toxcalc/
+
 template:
   bootstrap: 5
 
 development:
   mode: auto
+
+# Grouped by the branch of the EPA analysis each function belongs to, so the
+# reference index reads in the same order as the manuals themselves.
+reference:
+  - title: Start here
+    desc: >
+      The drivers. Each walks an EPA flowchart, selects the method the manual
+      directs, and records why.
+    contents:
+      - toxcalc
+      - lc50
+      - decisions
+
+  - title: Preparing data
+    desc: The input contract and the transformations every method begins with.
+    contents:
+      - toxcalc_data
+      - arcsine_sqrt
+      - inv_arcsine_sqrt
+      - abbott
+      - smooth_monotone
+      - is_monotone
+
+  - title: Assumptions and sensitivity
+    desc: >
+      The tests that decide which branch of the hypothesis-testing flowchart is
+      taken, and the measures of how sensitive the test was.
+    contents:
+      - epa_normality
+      - epa_variance
+      - msd
+      - pmsd
+
+  - title: Hypothesis tests
+    desc: >
+      The tests the flowchart can select. `williams()` is an extension rather
+      than an EPA method and is never selected automatically.
+    contents:
+      - dunnett
+      - bonferroni_t
+      - dunn_sidak_t
+      - welch_t
+      - steel
+      - wilcoxon_rank_sum
+      - fisher_exact
+      - williams
+
+  - title: Point estimation
+    desc: >
+      Median lethal concentrations from the Figure 6 flowchart, and inhibition
+      concentrations by linear interpolation.
+    contents:
+      - graphical_lc50
+      - spearman_karber
+      - trimmed_spearman_karber
+      - probit_lc
+      - icp
+
+  - title: EPA worked-example data
+    desc: >
+      The datasets the manuals use in their worked examples, each documented
+      with the results the manual publishes for it.
+    contents:
+      - fathead_b1
+      - fathead_c1
+      - ceriodaphnia_b7
+      - ceriodaphnia_e1
+      - ceriodaphnia_g2
+      - ceriodaphnia_m1
+      - acute_table20
+      - epa_pmsd_bounds
+
+  - title: internal
+    contents:
+      - toxcalc-package
+      - toxcalc_params

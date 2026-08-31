@@ -407,3 +407,43 @@ is 8.5. The implementation was right and the test was wrong.
 R CMD check clean at 0/0/0; 514 assertions passing.
 
 ---
+**User:** Yes go ahead and do phase 8
+
+**Claude:** Implemented Phase 8: a driver that runs both branches, a tidy
+output shape, an executable README and a grouped pkgdown reference index.
+
+**Both branches from one call.** `toxcalc(branch = "both")` returns the NOEC,
+LOEC, MSD and PMSD alongside a point estimate, choosing `lc50()` for a quantal
+endpoint and `icp()` for a continuous one. That is what a laboratory report
+usually contains. The point branch deliberately uses the **original** data,
+including any concentration the hypothesis branch excluded, which is what
+section 9.5.2 requires and is asserted in a test.
+
+`as.data.frame()` now returns one tidy row per endpoint rather than one wide
+row, which is the only shape that works once two branches can report together.
+
+**Two design corrections came out of testing.**
+
+A `branch = "point"` option was implemented first and then removed. It
+duplicated `lc50()` and `icp()`, which are easier to find, and it left a
+half-populated object carrying a NULL hypothesis test. Offering only
+`"hypothesis"` and `"both"` is cleaner.
+
+The same test exposed a genuine robustness defect: a design with a single
+replicate at every concentration produced no within-concentration variation, and
+`stats::shapiro.test` failed with "all 'x' values are identical". That now
+raises a clear error explaining that such a design supports no hypothesis test
+at all while the point-estimation methods, which work on pooled counts, handle
+it. `acute_table20` is exactly such a design, so the case is real rather than
+hypothetical.
+
+**Documentation.** `README.Rmd` replaces the hand-written README, so the audit
+trail, the tidy output and the Figure 6 routing shown there are executed rather
+than pasted and cannot drift from the code. The pkgdown reference index is
+grouped by branch of the EPA analysis, so it reads in the same order as the
+manuals; `pkgdown::check_pkgdown()` reports no problems. The pkgdown site URL
+was added to `DESCRIPTION` because pkgdown requires it there.
+
+R CMD check clean at 0/0/0; 536 assertions passing.
+
+---
