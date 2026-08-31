@@ -7,10 +7,10 @@
 icp(x, ..., p = 25, nboot = 200, seed = NULL, ci_level = 0.95)
 }
 \arguments{
-\item{x}{A \code{toxcalc_data()} object, or a data frame that can be coerced to
-one by passing it through \code{toxcalc_data()}.}
+\item{x}{A \code{tox_data()} object, or a data frame that can be coerced to
+one by passing it through \code{tox_data()}.}
 
-\item{...}{Additional arguments passed to \code{toxcalc_data()} when \code{x} is a
+\item{...}{Additional arguments passed to \code{tox_data()} when \code{x} is a
 bare data frame, and otherwise unused.}
 
 \item{p}{The percentage reductions to estimate, on a 1 to 99 scale.}
@@ -24,7 +24,7 @@ are reproducible. \code{NULL} leaves the random number stream untouched.}
 \item{ci_level}{Confidence level for interval estimates. Defaults to 0.95.}
 }
 \value{
-An object of class \code{toxcalc_estimate}, with an additional \code{boot}
+An object of class \code{tox_estimate}, with an additional \code{boot}
 element holding the resampled estimates, the count that could not be
 computed, and the seed used.
 }

@@ -4,7 +4,7 @@
 # terminal of the Figure 6 chart, so together they test the whole chart.
 
 table20 <- function(column) {
-  toxcalc_data(
+  tox_data(
     acute_table20,
     response = column,
     n_exposed = "exposed",
@@ -126,14 +126,14 @@ test_that("an unknown method is rejected", {
 # the chart ------------------------------------------------------------------
 
 test_that("the Figure 6 chart is well formed", {
-  chart <- toxcalc:::flowchart_lc50()
+  chart <- toxstats:::flowchart_lc50()
   destinations <- unique(c(chart$yes, chart$no))
-  known <- c(chart$node, names(toxcalc:::lc50_terminals()))
+  known <- c(chart$node, names(toxstats:::lc50_terminals()))
 
   expect_true(all(destinations %in% known))
   expect_true(all(chart$node[-1] %in% destinations))
   expect_setequal(
-    unname(toxcalc:::lc50_terminals()),
+    unname(toxstats:::lc50_terminals()),
     c(
       "probit_lc",
       "spearman_karber",

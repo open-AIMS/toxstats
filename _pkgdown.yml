@@ -1,4 +1,4 @@
-url: https://beckyfisher.github.io/toxcalc/
+url: https://beckyfisher.github.io/toxstats/
 
 template:
   bootstrap: 5
@@ -21,7 +21,7 @@ reference:
   - title: Preparing data
     desc: The input contract and the transformations every method begins with.
     contents:
-      - toxcalc_data
+      - tox_data
       - arcsine_sqrt
       - inv_arcsine_sqrt
       - abbott
@@ -79,5 +79,5 @@ reference:
 
   - title: internal
     contents:
-      - toxcalc-package
-      - toxcalc_params
+      - toxstats-package
+      - toxstats_params

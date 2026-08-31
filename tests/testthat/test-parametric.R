@@ -34,7 +34,8 @@ test_that("dunnett reports adjusted p-values consistent with the decision", {
   # the statistic against the familywise critical value.
   expect_equal(fit$comparisons$p_value <= 0.05, fit$comparisons$significant)
   # The comparison whose statistic equals the critical value has p = alpha.
-  at_critical <- 1 - toxcalc:::dunnett_prob(fit$critical, rep(sqrt(0.5), 4), 15)
+  at_critical <- 1 -
+    toxstats:::dunnett_prob(fit$critical, rep(sqrt(0.5), 4), 15)
   expect_equal(at_critical, 0.05, tolerance = 1e-6)
 })
 
@@ -97,7 +98,7 @@ test_that("bonferroni_t accepts a balanced design as well", {
 # dunn_sidak_t --------------------------------------------------------------
 
 test_that("dunn_sidak_t sits between Dunnett and Bonferroni", {
-  x <- toxcalc_data(fathead_c1, response = "weight")
+  x <- tox_data(fathead_c1, response = "weight")
   expect_lt(dunnett(x)$critical, dunn_sidak_t(x)$critical)
   expect_lt(dunn_sidak_t(x)$critical, bonferroni_t(x)$critical)
 })
@@ -150,11 +151,11 @@ test_that("an increasing endpoint reverses the tail", {
 # NOEC and LOEC derivation --------------------------------------------------
 
 test_that("endpoints fall outside the range when nothing or everything is significant", {
-  none <- toxcalc:::derive_noec_loec(c(1, 2, 4), c(FALSE, FALSE, FALSE))
+  none <- toxstats:::derive_noec_loec(c(1, 2, 4), c(FALSE, FALSE, FALSE))
   expect_equal(none$noec, 4)
   expect_true(is.na(none$loec))
 
-  all_of_them <- toxcalc:::derive_noec_loec(c(1, 2, 4), c(TRUE, TRUE, TRUE))
+  all_of_them <- toxstats:::derive_noec_loec(c(1, 2, 4), c(TRUE, TRUE, TRUE))
   expect_true(is.na(all_of_them$noec))
   expect_equal(all_of_them$loec, 1)
 })
@@ -162,7 +163,7 @@ test_that("endpoints fall outside the range when nothing or everything is signif
 test_that("a non-monotone significance pattern is reported, not smoothed", {
   # Section 9.6.5.1 gives no rule for this, so the LOEC is the lowest
   # significant concentration and the pattern is flagged.
-  broken <- toxcalc:::derive_noec_loec(c(1, 2, 4), c(FALSE, TRUE, FALSE))
+  broken <- toxstats:::derive_noec_loec(c(1, 2, 4), c(FALSE, TRUE, FALSE))
   expect_equal(broken$loec, 2)
   expect_equal(broken$noec, 1)
   expect_false(broken$monotone)
@@ -177,6 +178,6 @@ test_that("comparisons print their endpoints and reference", {
 })
 
 test_that("an endpoint outside the tested range prints as an inequality", {
-  x <- toxcalc_data(fathead_c1, response = "weight", direction = "increasing")
+  x <- tox_data(fathead_c1, response = "weight", direction = "increasing")
   expect_output(print(dunnett(x)), "LOEC > 256")
 })

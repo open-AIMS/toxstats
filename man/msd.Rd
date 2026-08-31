@@ -7,10 +7,10 @@
 msd(x, ..., alpha = 0.05, test = c("dunnett", "bonferroni", "sidak"))
 }
 \arguments{
-\item{x}{A \code{toxcalc_data()} object, or a data frame that can be coerced to
-one by passing it through \code{toxcalc_data()}.}
+\item{x}{A \code{tox_data()} object, or a data frame that can be coerced to
+one by passing it through \code{tox_data()}.}
 
-\item{...}{Additional arguments passed to \code{toxcalc_data()} when \code{x} is a
+\item{...}{Additional arguments passed to \code{tox_data()} when \code{x} is a
 bare data frame, and otherwise unused.}
 
 \item{alpha}{Significance level for the hypothesis tests themselves. The EPA
@@ -22,7 +22,7 @@ manuals specify 0.05, one-sided.}
 adjustment, used when replication is unequal.}
 }
 \value{
-An object of class \code{toxcalc_msd}, a list with elements \code{msd} (named
+An object of class \code{tox_msd}, a list with elements \code{msd} (named
 by concentration), \code{critical}, \code{sw}, \code{df}, \code{n_control}, \code{n}, \code{test},
 \code{alpha} and \code{balanced}.
 }

@@ -1,9 +1,9 @@
-# toxcalc — what we are building and why
+# toxstats — what we are building and why
 
 This document is for collaborators. It explains what the package does, why, in
 what order it will be built, and what changes for someone analysing toxicity
 data. The full specification, including algorithms and the evidence behind each
-decision, is in `notes/TOXCALC-claude.md`; section references below point there.
+decision, is in `notes/TOXSTATS-claude.md`; section references below point there.
 
 ---
 
@@ -108,7 +108,7 @@ exposed makes both possible from one input.
 A typical call looks like this:
 
 ```r
-result <- toxcalc(growth ~ conc, data = fathead, type = "continuous")
+result <- tox_test(growth ~ conc, data = fathead, type = "continuous")
 summary(result)
 ```
 

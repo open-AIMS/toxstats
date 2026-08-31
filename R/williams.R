@@ -64,7 +64,7 @@
 #' design, because the order restriction is additional information, and it
 #' must increase with `i`. All three are asserted in the test suite.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param nsim Number of simulations used for each critical value.
 #' @param seed Integer seed for the simulation. The random number stream is
 #'   restored afterwards, so calling this function does not disturb any other
@@ -92,7 +92,7 @@ williams <- function(x, ..., alpha = 0.05, nsim = 20000, seed = 1L) {
   chk::chk_gte(nsim, 1000)
   chk::chk_whole_number(seed)
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- comparison_parts(x)
   control <- parts$control_index
   treatments <- setdiff(seq_along(parts$conc), control)

@@ -53,7 +53,7 @@
 #' the override is added to the trail, so a forced analysis can never be
 #' printed as though the manual had chosen it.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param test Optional. Name of a test to run instead of the one the
 #'   flowchart selects: one of `"dunnett"`, `"bonferroni_t"`, `"steel"` or
 #'   `"wilcoxon_rank_sum"`.
@@ -76,7 +76,7 @@
 #' @param nboot,seed Passed to [icp()] when the point branch applies to a
 #'   continuous endpoint.
 #'
-#' @return An object of class `toxcalc`, a list with elements `data`,
+#' @return An object of class `tox_test`, a list with elements `data`,
 #'   `working`, `decisions`, `assumptions`, `comparison`, `msd`, `pmsd`,
 #'   `noec`, `loec`, `excluded`, `overridden`, `transform`, `flowchart`,
 #'   `alpha` and `alpha_assumption`.
@@ -89,11 +89,11 @@
 #' @examples
 #' # Appendix C growth data: normal, homogeneous and balanced, so the
 #' # flowchart selects Dunnett's procedure.
-#' fit <- toxcalc(fathead_c1, response = "weight")
+#' fit <- tox_test(fathead_c1, response = "weight")
 #' summary(fit)
 #'
 #' @export
-toxcalc <- function(
+tox_test <- function(
   x,
   ...,
   alpha = 0.05,
@@ -119,7 +119,7 @@ toxcalc <- function(
     chk::chk_subset(test, c(unname(flowchart_terminals()), "williams"))
   }
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   excluded <- excluded_concentrations(x, exclude)
   analysis <- drop_concentrations(x, excluded$conc)
 
@@ -237,13 +237,13 @@ toxcalc <- function(
       alpha_assumption = alpha_assumption,
       call = match.call()
     ),
-    class = "toxcalc"
+    class = "tox_test"
   )
 }
 
 #' Concentrations excluded from the hypothesis test
 #'
-#' @param x A `toxcalc_data` object.
+#' @param x A `tox_data` object.
 #' @param exclude User-supplied concentrations to exclude.
 #' @return A data frame with columns `conc` and `reason`.
 #' @noRd
@@ -283,11 +283,11 @@ excluded_concentrations <- function(x, exclude) {
   out[!duplicated(out$conc), , drop = FALSE]
 }
 
-#' Remove concentrations from a toxcalc_data object
+#' Remove concentrations from a tox_data object
 #'
-#' @param x A `toxcalc_data` object.
+#' @param x A `tox_data` object.
 #' @param conc Concentrations to drop.
-#' @return A `toxcalc_data` object.
+#' @return A `tox_data` object.
 #' @noRd
 drop_concentrations <- function(x, conc) {
   if (!length(conc)) {
@@ -316,9 +316,9 @@ pmsd_or_null <- function(x, alpha, bounds) {
 
 #' Apply the section 10.2.8.2.5 lower-bound override
 #'
-#' @param comparison A `toxcalc_comparison`.
-#' @param x The working `toxcalc_data`.
-#' @param sensitivity The `toxcalc_pmsd` result, or NULL.
+#' @param comparison A `tox_comparison`.
+#' @param x The working `tox_data`.
+#' @param sensitivity The `tox_pmsd` result, or NULL.
 #' @return A list with the possibly amended `comparison` and the decision
 #'   `rows` to append.
 #' @noRd
@@ -392,7 +392,7 @@ decision_rows <- function(node) {
 }
 
 #' @export
-print.toxcalc <- function(x, ...) {
+print.tox_test <- function(x, ...) {
   cat("EPA WET hypothesis test\n")
   cat("  Flowchart: ", x$flowchart, "\n", sep = "")
   cat("  Selected:  ", x$comparison$method, "\n", sep = "")
@@ -405,12 +405,12 @@ print.toxcalc <- function(x, ...) {
   invisible(x)
 }
 
-#' @describeIn toxcalc Print the decision trail above the endpoints.
+#' @describeIn tox_test Print the decision trail above the endpoints.
 #'
-#' @param object A `toxcalc` object.
+#' @param object A `tox_test` object.
 #'
 #' @export
-summary.toxcalc <- function(object, ...) {
+summary.tox_test <- function(object, ...) {
   chk::chk_unused(...)
 
   cat("EPA WET hypothesis test\n")
@@ -522,13 +522,13 @@ print_endpoints <- function(x) {
   invisible(x)
 }
 
-#' @describeIn toxcalc Return every endpoint as one tidy row.
+#' @describeIn tox_test Return every endpoint as one tidy row.
 #'
 #' @param row.names Unused.
 #' @param optional Unused.
 #'
 #' @export
-as.data.frame.toxcalc <- function(x, row.names = NULL, optional = FALSE, ...) {
+as.data.frame.tox_test <- function(x, row.names = NULL, optional = FALSE, ...) {
   chk::chk_unused(...)
 
   hypothesis <- data.frame(
@@ -554,7 +554,7 @@ as.data.frame.toxcalc <- function(x, row.names = NULL, optional = FALSE, ...) {
         value = point$estimate,
         lower = point$lower,
         upper = point$upper,
-        method = if (inherits(x$point, "toxcalc_lc50")) {
+        method = if (inherits(x$point, "tox_lc50")) {
           x$point$selected
         } else {
           "icp"
@@ -580,11 +580,11 @@ as.data.frame.toxcalc <- function(x, row.names = NULL, optional = FALSE, ...) {
 #' excluded: section 9.5.2 retains for point estimation the concentrations it
 #' drops from the no-observed-effect concentration.
 #'
-#' @param x The unmodified `toxcalc_data` object.
+#' @param x The unmodified `tox_data` object.
 #' @param p Percentages to estimate, or NULL for the default of each method.
 #' @param alpha Significance level, used only by the probit fit check.
 #' @param nboot,seed Passed to [icp()] for a continuous endpoint.
-#' @return A `toxcalc_lc50` or a `toxcalc_estimate`.
+#' @return A `tox_lc50` or a `tox_estimate`.
 #' @noRd
 point_branch <- function(x, p, alpha, nboot, seed) {
   if (x$type == "quantal") {
@@ -596,14 +596,14 @@ point_branch <- function(x, p, alpha, nboot, seed) {
 
 #' The point-estimation results as a data frame, or an empty frame
 #'
-#' @param x A `toxcalc` object.
+#' @param x A `tox_test` object.
 #' @return A data frame with the same columns `endpoint_frame()` produces.
 #' @noRd
 point_estimates <- function(x) {
   if (is.null(x$point)) {
     return(NULL)
   }
-  if (inherits(x$point, "toxcalc_lc50")) {
+  if (inherits(x$point, "tox_lc50")) {
     x$point$estimate$estimates
   } else {
     x$point$estimates

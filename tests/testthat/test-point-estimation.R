@@ -6,7 +6,7 @@
 # helpers -------------------------------------------------------------------
 
 table20 <- function(column) {
-  toxcalc_data(
+  tox_data(
     acute_table20,
     response = column,
     n_exposed = "exposed",
@@ -75,8 +75,8 @@ test_that("the Spearman-Karber interval uses the manual's multiplier of 2", {
     log10(fit$estimates$upper) - fit$m,
     2 * sqrt(fit$variance)
   )
-  expect_equal(toxcalc:::epa_multiplier(0.95), 2)
-  expect_equal(toxcalc:::epa_multiplier(0.99), qnorm(0.995))
+  expect_equal(toxstats:::epa_multiplier(0.95), 2)
+  expect_equal(toxstats:::epa_multiplier(0.99), qnorm(0.995))
 })
 
 test_that("spearman_karber refuses data that do not meet its requirements", {

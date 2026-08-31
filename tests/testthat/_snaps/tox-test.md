@@ -1,7 +1,7 @@
 # the Appendix C summary is stable
 
     Code
-      summary(toxcalc(fathead_c1, response = "weight", pmsd_bounds = "fathead_growth"))
+      summary(tox_test(fathead_c1, response = "weight", pmsd_bounds = "fathead_growth"))
     Output
       EPA WET hypothesis test
       Flowchart: EPA-821-R-02-013 Figure 2
@@ -28,7 +28,7 @@
 # the Appendix E summary is stable
 
     Code
-      summary(toxcalc(ceriodaphnia_e1, response = "young", exclude = 50))
+      summary(tox_test(ceriodaphnia_e1, response = "young", exclude = 50))
     Output
       EPA WET hypothesis test
       Flowchart: EPA-821-R-02-013 Figure 2

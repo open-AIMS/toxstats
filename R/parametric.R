@@ -20,9 +20,9 @@
 #' function signals an error rather than silently returning a value the manual
 #' would not accept.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #'
-#' @return An object of class `toxcalc_comparison`, a list with elements
+#' @return An object of class `tox_comparison`, a list with elements
 #'   `test`, `method`, `comparisons` (a data frame with one row per treatment
 #'   concentration), `noec`, `loec`, `monotone`, `critical`, `sw`, `df`,
 #'   `alpha` and `reference`.
@@ -40,7 +40,7 @@
 #'
 #' @export
 dunnett <- function(x, ..., alpha = 0.05) {
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- comparison_parts(x)
 
   if (length(unique(parts$n)) != 1L) {
@@ -73,7 +73,7 @@ dunnett <- function(x, ..., alpha = 0.05) {
 #' rate rather than fixing it there, so it is more conservative than Dunnett's
 #' procedure and correspondingly less powerful.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #'
 #' @inherit dunnett return
 #'
@@ -87,7 +87,7 @@ dunnett <- function(x, ..., alpha = 0.05) {
 #'
 #' @export
 bonferroni_t <- function(x, ..., alpha = 0.05) {
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   many_one_t(x, comparison_parts(x), alpha, test = "bonferroni")
 }
 
@@ -102,7 +102,7 @@ bonferroni_t <- function(x, ..., alpha = 0.05) {
 #' offered this test; the EPA flowchart does not select it, so using it is a
 #' documented departure from the manual.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #'
 #' @inherit dunnett return
 #'
@@ -116,7 +116,7 @@ bonferroni_t <- function(x, ..., alpha = 0.05) {
 #'
 #' @export
 dunn_sidak_t <- function(x, ..., alpha = 0.05) {
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   many_one_t(x, comparison_parts(x), alpha, test = "sidak")
 }
 
@@ -133,7 +133,7 @@ dunn_sidak_t <- function(x, ..., alpha = 0.05) {
 #' single-concentration chart of the acute manual (Figure 12) and was offered
 #' by ToxCalc, so it is provided here and flagged as a departure.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param adjust How to adjust for multiplicity across the `k` comparisons.
 #'
 #' @inherit dunnett return
@@ -155,7 +155,7 @@ welch_t <- function(
   chk::chk_number(alpha)
   chk::chk_range(alpha, c(0, 1))
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- comparison_parts(x)
   control <- parts$control_index
   treatments <- setdiff(seq_along(parts$conc), control)
@@ -209,11 +209,11 @@ welch_t <- function(
 #' Shared by Dunnett's procedure and the two adjusted t tests, which differ
 #' only in the critical value they compare the statistic with.
 #'
-#' @param x A `toxcalc_data` object.
+#' @param x A `tox_data` object.
 #' @param parts The output of `comparison_parts()`.
 #' @param alpha Familywise significance level.
 #' @param test One of "dunnett", "bonferroni", "sidak".
-#' @return A `toxcalc_comparison`.
+#' @return A `tox_comparison`.
 #' @noRd
 many_one_t <- function(x, parts, alpha, test) {
   chk::chk_number(alpha)

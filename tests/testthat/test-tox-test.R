@@ -1,4 +1,4 @@
-# Tests for the flowchart driver in R/toxcalc.R and the engine in R/flowchart.R
+# Tests for the flowchart driver in R/tox_test.R and the engine in R/flowchart.R
 
 # fixtures ------------------------------------------------------------------
 
@@ -32,9 +32,9 @@ quantal_design <- function() {
 # end to end: the parametric branch ------------------------------------------
 
 test_that("the flowchart selects Dunnett on the Appendix C data", {
-  fit <- toxcalc(fathead_c1, response = "weight")
+  fit <- tox_test(fathead_c1, response = "weight")
 
-  expect_s3_class(fit, "toxcalc")
+  expect_s3_class(fit, "tox_test")
   expect_equal(fit$selected, "dunnett")
   expect_false(fit$overridden)
   expect_equal(fit$transform, "none")
@@ -44,7 +44,7 @@ test_that("the flowchart selects Dunnett on the Appendix C data", {
 })
 
 test_that("the Appendix C decision trail records every branch point", {
-  trail <- decisions(toxcalc(fathead_c1, response = "weight"))
+  trail <- decisions(tox_test(fathead_c1, response = "weight"))
 
   expect_equal(
     trail$node,
@@ -60,7 +60,7 @@ test_that("the Appendix C decision trail records every branch point", {
 })
 
 test_that("the two significance levels are applied where they belong", {
-  fit <- toxcalc(fathead_c1, response = "weight")
+  fit <- tox_test(fathead_c1, response = "weight")
   trail <- decisions(fit)
 
   expect_equal(fit$alpha, 0.05)
@@ -75,7 +75,7 @@ test_that("the two significance levels are applied where they belong", {
 test_that("the flowchart selects Steel on the Appendix E data", {
   # The 50 per cent concentration is dropped because Appendix G found survival
   # there significantly reduced.
-  fit <- toxcalc(ceriodaphnia_e1, response = "young", exclude = 50)
+  fit <- tox_test(ceriodaphnia_e1, response = "young", exclude = 50)
 
   expect_equal(fit$selected, "steel")
   expect_equal(fit$noec, 3)
@@ -83,7 +83,7 @@ test_that("the flowchart selects Steel on the Appendix E data", {
 })
 
 test_that("Steel is reached because normality fails, not by assumption", {
-  fit <- toxcalc(ceriodaphnia_e1, response = "young", exclude = 50)
+  fit <- tox_test(ceriodaphnia_e1, response = "young", exclude = 50)
   trail <- decisions(fit)
 
   expect_equal(trail$answer[trail$node == "normality"], "no")
@@ -97,7 +97,7 @@ test_that("Steel is reached because normality fails, not by assumption", {
 # exclusions -----------------------------------------------------------------
 
 test_that("caller-supplied exclusions are recorded and applied", {
-  fit <- toxcalc(ceriodaphnia_e1, response = "young", exclude = 50)
+  fit <- tox_test(ceriodaphnia_e1, response = "young", exclude = 50)
 
   expect_equal(fit$excluded$conc, 50)
   expect_match(fit$excluded$reason, "9.5.2")
@@ -109,7 +109,7 @@ test_that("caller-supplied exclusions are recorded and applied", {
 test_that("a completely responding concentration is excluded automatically", {
   raw <- quantal_design()
   raw$affected[raw$conc == 40] <- 10
-  fit <- toxcalc(
+  fit <- tox_test(
     raw,
     response = "affected",
     n_exposed = "exposed",
@@ -122,14 +122,14 @@ test_that("a completely responding concentration is excluded automatically", {
 
 test_that("the control cannot be excluded", {
   expect_error(
-    toxcalc(fathead_c1, response = "weight", exclude = 0),
+    tox_test(fathead_c1, response = "weight", exclude = 0),
     regexp = "control concentration cannot be excluded"
   )
 })
 
 test_that("an unknown exclusion is rejected", {
   expect_error(
-    toxcalc(fathead_c1, response = "weight", exclude = 999),
+    tox_test(fathead_c1, response = "weight", exclude = 999),
     regexp = "999"
   )
 })
@@ -137,7 +137,7 @@ test_that("an unknown exclusion is rejected", {
 # the transform branch -------------------------------------------------------
 
 test_that("quantal data is arc sine transformed before the assumption tests", {
-  fit <- toxcalc(
+  fit <- tox_test(
     quantal_design(),
     response = "affected",
     n_exposed = "exposed",
@@ -157,7 +157,7 @@ test_that("quantal data is arc sine transformed before the assumption tests", {
 })
 
 test_that("continuous data is not transformed", {
-  fit <- toxcalc(fathead_c1, response = "weight")
+  fit <- tox_test(fathead_c1, response = "weight")
   expect_equal(fit$transform, "none")
   expect_equal(decisions(fit)$answer[1], "no")
   expect_equal(fit$working$replicates$response, fit$data$replicates$response)
@@ -167,7 +167,7 @@ test_that("continuous data is not transformed", {
 
 test_that("forcing a different test warns and is recorded", {
   expect_warning(
-    fit <- toxcalc(fathead_c1, response = "weight", test = "steel"),
+    fit <- tox_test(fathead_c1, response = "weight", test = "steel"),
     regexp = "flowchart selected"
   )
 
@@ -183,7 +183,7 @@ test_that("forcing a different test warns and is recorded", {
 
 test_that("forcing the test the flowchart chose is not an override", {
   expect_no_warning(
-    fit <- toxcalc(fathead_c1, response = "weight", test = "dunnett")
+    fit <- tox_test(fathead_c1, response = "weight", test = "dunnett")
   )
   expect_false(fit$overridden)
   expect_false("override" %in% decisions(fit)$node)
@@ -191,7 +191,7 @@ test_that("forcing the test the flowchart chose is not an override", {
 
 test_that("an unknown test name is rejected", {
   expect_error(
-    toxcalc(fathead_c1, response = "weight", test = "tukey"),
+    tox_test(fathead_c1, response = "weight", test = "tukey"),
     regexp = "tukey"
   )
 })
@@ -199,7 +199,7 @@ test_that("an unknown test name is rejected", {
 # the PMSD lower-bound override ----------------------------------------------
 
 test_that("no override is applied without bounds", {
-  fit <- toxcalc(fathead_c1, response = "weight")
+  fit <- tox_test(fathead_c1, response = "weight")
   expect_false("pmsd_override" %in% decisions(fit)$node)
   expect_equal(fit$loec, 256)
 })
@@ -207,10 +207,10 @@ test_that("no override is applied without bounds", {
 test_that("a significant concentration below the lower bound is reversed", {
   # Section 10.2.8.2.5. The 256 ug/L concentration differs from the control by
   # about 33 per cent, so a lower bound above that must reverse it.
-  plain <- toxcalc(fathead_c1, response = "weight")
+  plain <- tox_test(fathead_c1, response = "weight")
   expect_equal(plain$loec, 256)
 
-  overridden <- toxcalc(
+  overridden <- tox_test(
     fathead_c1,
     response = "weight",
     pmsd_bounds = c(40, 60)
@@ -227,7 +227,7 @@ test_that("a significant concentration below the lower bound is reversed", {
 })
 
 test_that("bounds that do not bite leave the result alone", {
-  fit <- toxcalc(
+  fit <- tox_test(
     fathead_c1,
     response = "weight",
     pmsd_bounds = "fathead_growth"
@@ -262,7 +262,7 @@ test_that("a design with no EPA-sanctioned test is refused explicitly", {
     )
   )
   expect_error(
-    toxcalc(skewed, response = "y"),
+    tox_test(skewed, response = "y"),
     regexp = "no\\s+EPA-sanctioned test is available"
   )
 })
@@ -270,7 +270,7 @@ test_that("a design with no EPA-sanctioned test is refused explicitly", {
 # sensitivity ----------------------------------------------------------------
 
 test_that("MSD and PMSD are reported for the Appendix C example", {
-  fit <- toxcalc(
+  fit <- tox_test(
     fathead_c1,
     response = "weight",
     pmsd_bounds = "fathead_growth"
@@ -282,7 +282,7 @@ test_that("MSD and PMSD are reported for the Appendix C example", {
 
 test_that("MSD is computed even when a non-parametric test was selected", {
   # Section 10.2.8 asks for it parametrically regardless of the branch taken.
-  fit <- toxcalc(ceriodaphnia_e1, response = "young", exclude = 50)
+  fit <- tox_test(ceriodaphnia_e1, response = "young", exclude = 50)
   expect_equal(fit$selected, "steel")
   expect_false(is.null(fit$pmsd))
   expect_gt(unname(fit$pmsd$msd$msd[1]), 0)
@@ -292,7 +292,7 @@ test_that("MSD is computed even when a non-parametric test was selected", {
 
 test_that("as.data.frame returns one tidy row per endpoint", {
   out <- as.data.frame(
-    toxcalc(fathead_c1, response = "weight", pmsd_bounds = "fathead_growth")
+    tox_test(fathead_c1, response = "weight", pmsd_bounds = "fathead_growth")
   )
 
   expect_equal(out$endpoint, c("NOEC", "LOEC", "MSD", "PMSD"))
@@ -306,7 +306,7 @@ test_that("as.data.frame returns one tidy row per endpoint", {
 })
 
 test_that("print is brief and summary carries the trail", {
-  fit <- toxcalc(fathead_c1, response = "weight")
+  fit <- tox_test(fathead_c1, response = "weight")
 
   expect_output(print(fit), "EPA WET hypothesis test")
   expect_output(print(fit), "NOEC 128")
@@ -318,14 +318,14 @@ test_that("print is brief and summary carries the trail", {
 
 test_that("summary reports an override prominently", {
   suppressWarnings(
-    fit <- toxcalc(fathead_c1, response = "weight", test = "steel")
+    fit <- tox_test(fathead_c1, response = "weight", test = "steel")
   )
   expect_output(print(fit), "OVERRIDDEN")
 })
 
 test_that("the Appendix C summary is stable", {
   expect_snapshot(
-    summary(toxcalc(
+    summary(tox_test(
       fathead_c1,
       response = "weight",
       pmsd_bounds = "fathead_growth"
@@ -335,15 +335,15 @@ test_that("the Appendix C summary is stable", {
 
 test_that("the Appendix E summary is stable", {
   expect_snapshot(
-    summary(toxcalc(ceriodaphnia_e1, response = "young", exclude = 50))
+    summary(tox_test(ceriodaphnia_e1, response = "young", exclude = 50))
   )
 })
 
 # the engine -----------------------------------------------------------------
 
 test_that("the chart is well formed", {
-  chart <- toxcalc:::flowchart_hypothesis_multi()
-  terminals <- names(toxcalc:::flowchart_terminals())
+  chart <- toxstats:::flowchart_hypothesis_multi()
+  terminals <- names(toxstats:::flowchart_terminals())
 
   # Every destination is either another node or a known terminal.
   destinations <- unique(c(chart$yes, chart$no))
@@ -354,14 +354,14 @@ test_that("the chart is well formed", {
 })
 
 test_that("walk_flowchart rejects an unknown node", {
-  chart <- toxcalc:::flowchart_hypothesis_multi()
+  chart <- toxstats:::flowchart_hypothesis_multi()
   chart$yes[chart$node == "transform"] <- "nowhere"
   chart$no[chart$node == "transform"] <- "nowhere"
   expect_error(
-    toxcalc:::walk_flowchart(
+    toxstats:::walk_flowchart(
       chart,
       list(
-        working = toxcalc_data(fathead_c1, response = "weight"),
+        working = tox_data(fathead_c1, response = "weight"),
         alpha_assumption = 0.01,
         assumptions = list()
       )
@@ -373,7 +373,7 @@ test_that("walk_flowchart rejects an unknown node", {
 # running both branches ------------------------------------------------------
 
 test_that("the default runs the hypothesis branch only", {
-  fit <- toxcalc(fathead_c1, response = "weight")
+  fit <- tox_test(fathead_c1, response = "weight")
 
   expect_equal(fit$branch, "hypothesis")
   expect_null(fit$point)
@@ -381,7 +381,7 @@ test_that("the default runs the hypothesis branch only", {
 })
 
 test_that("a continuous endpoint takes the interpolation branch", {
-  fit <- toxcalc(
+  fit <- tox_test(
     ceriodaphnia_m1,
     response = "young",
     branch = "both",
@@ -389,7 +389,7 @@ test_that("a continuous endpoint takes the interpolation branch", {
     seed = 42
   )
 
-  expect_s3_class(fit$point, "toxcalc_estimate")
+  expect_s3_class(fit$point, "tox_estimate")
   expect_match(fit$point$method, "Linear interpolation")
   # The Appendix M estimate, reached through the driver rather than directly.
   expect_equal(round(fit$point$estimates$estimate, 4), 8.5715)
@@ -397,7 +397,7 @@ test_that("a continuous endpoint takes the interpolation branch", {
 
 test_that("a quantal endpoint takes the LC50 branch", {
   raw <- quantal_design()
-  fit <- toxcalc(
+  fit <- tox_test(
     raw,
     response = "affected",
     n_exposed = "exposed",
@@ -405,8 +405,8 @@ test_that("a quantal endpoint takes the LC50 branch", {
     branch = "both"
   )
 
-  expect_s3_class(fit$point, "toxcalc_lc50")
-  expect_true(fit$point$selected %in% unname(toxcalc:::lc50_terminals()))
+  expect_s3_class(fit$point, "tox_lc50")
+  expect_true(fit$point$selected %in% unname(toxstats:::lc50_terminals()))
   expect_equal(nrow(fit$point$estimate$estimates), 2L)
 })
 
@@ -415,7 +415,7 @@ test_that("a design with one replicate per concentration is refused clearly", {
   # within-concentration variation and no hypothesis test is possible. The
   # error should say so rather than surfacing one from shapiro.test.
   expect_error(
-    toxcalc(
+    tox_test(
       acute_table20,
       response = "probit",
       n_exposed = "exposed",
@@ -439,7 +439,7 @@ test_that("point estimation uses all the data, exclusions and all", {
   # but keeps it for point estimation, so the two branches see different data.
   raw <- quantal_design()
   raw$affected[raw$conc == 40] <- 10
-  fit <- toxcalc(
+  fit <- tox_test(
     raw,
     response = "affected",
     n_exposed = "exposed",
@@ -454,7 +454,7 @@ test_that("point estimation uses all the data, exclusions and all", {
 })
 
 test_that("both branches appear in the tidy output together", {
-  fit <- toxcalc(
+  fit <- tox_test(
     ceriodaphnia_m1,
     response = "young",
     branch = "both",
@@ -471,7 +471,7 @@ test_that("both branches appear in the tidy output together", {
 })
 
 test_that("p selects which point estimates are reported", {
-  fit <- toxcalc(
+  fit <- tox_test(
     ceriodaphnia_m1,
     response = "young",
     branch = "both",
@@ -483,7 +483,7 @@ test_that("p selects which point estimates are reported", {
 })
 
 test_that("print shows the point estimate when there is one", {
-  fit <- toxcalc(
+  fit <- tox_test(
     ceriodaphnia_m1,
     response = "young",
     branch = "both",

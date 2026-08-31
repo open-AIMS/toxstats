@@ -23,7 +23,7 @@
 #' rather than returning a value the manual would not accept. It also requires
 #' at least four replicates per concentration (section 9.4.5.2).
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param method How the p-value is obtained: `"asymptotic"` (the default),
 #'   `"simulated"`, or `"exact"`. Passed to [kSamples::Steel.test()].
 #' @param nsim Number of simulations when `method = "simulated"`.
@@ -55,7 +55,7 @@ steel <- function(
   chk::chk_number(alpha)
   chk::chk_range(alpha, c(0, 1))
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- comparison_parts(x)
   control <- parts$control_index
   treatments <- setdiff(seq_along(parts$conc), control)
@@ -137,7 +137,7 @@ steel <- function(
 #' powerful. It requires at least four replicates per concentration
 #' (section 9.4.5.2).
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #'
 #' @inherit dunnett return
 #'
@@ -157,7 +157,7 @@ wilcoxon_rank_sum <- function(x, ..., alpha = 0.05) {
   chk::chk_number(alpha)
   chk::chk_range(alpha, c(0, 1))
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- comparison_parts(x)
   control <- parts$control_index
   treatments <- setdiff(seq_along(parts$conc), control)
@@ -210,7 +210,7 @@ wilcoxon_rank_sum <- function(x, ..., alpha = 0.05) {
 #' to survival, whose outcome is counted rather than measured.
 #'
 #' @details
-#' Requires quantal data, so `toxcalc_data(type = "quantal")` with `n_exposed`
+#' Requires quantal data, so `tox_data(type = "quantal")` with `n_exposed`
 #' supplied.
 #'
 #' **No multiplicity adjustment is applied by default.** Section 1 of Appendix
@@ -222,7 +222,7 @@ wilcoxon_rank_sum <- function(x, ..., alpha = 0.05) {
 #' (Table G.5). This package uses [stats::fisher.test()], which computes the
 #' same probability directly.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param adjust How to adjust for multiplicity. `"none"` is the EPA default
 #'   for this test.
 #'
@@ -251,10 +251,10 @@ fisher_exact <- function(
   chk::chk_number(alpha)
   chk::chk_range(alpha, c(0, 1))
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   if (x$type != "quantal") {
     chk::abort_chk(
-      "Fisher's Exact Test needs quantal data; call `toxcalc_data()` with ",
+      "Fisher's Exact Test needs quantal data; call `tox_data()` with ",
       "`type = \"quantal\"` and an `n_exposed` column."
     )
   }

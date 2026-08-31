@@ -2,19 +2,19 @@
 % Please edit documentation in R/flowchart.R, R/lc50.R
 \name{decisions}
 \alias{decisions}
-\alias{decisions.toxcalc}
-\alias{decisions.toxcalc_lc50}
+\alias{decisions.tox_test}
+\alias{decisions.tox_lc50}
 \title{Extract the decision trail}
 \usage{
 decisions(x, ...)
 
-\method{decisions}{toxcalc}(x, ...)
+\method{decisions}{tox_test}(x, ...)
 
-\method{decisions}{toxcalc_lc50}(x, ...)
+\method{decisions}{tox_lc50}(x, ...)
 }
 \arguments{
 \item{x}{An object carrying a decision trail, such as the result of
-\code{\link[=toxcalc]{toxcalc()}}.}
+\code{\link[=tox_test]{tox_test()}}.}
 
 \item{...}{Unused.}
 }
@@ -29,12 +29,12 @@ of the manual that justifies it.
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{decisions(toxcalc)}: Decision trail from a \code{toxcalc} analysis.
+\item \code{decisions(tox_test)}: Decision trail from a \code{tox_test} analysis.
 
-\item \code{decisions(toxcalc_lc50)}: Decision trail from an \code{\link[=lc50]{lc50()}} analysis.
+\item \code{decisions(tox_lc50)}: Decision trail from an \code{\link[=lc50]{lc50()}} analysis.
 
 }}
 \examples{
-decisions(toxcalc(fathead_c1, response = "weight"))
+decisions(tox_test(fathead_c1, response = "weight"))
 
 }

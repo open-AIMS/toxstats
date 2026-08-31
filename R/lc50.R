@@ -151,14 +151,14 @@ rule_sk_requirements <- function(state) {
 #' chronic manual is explicit that concentrations dropped from the
 #' no-observed-effect concentration are retained here.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param method Optional. Name of a method to use instead of the one the
 #'   flowchart selects: one of `"probit_lc"`, `"spearman_karber"`,
 #'   `"trimmed_spearman_karber"` or `"graphical_lc50"`. Forcing a method warns
-#'   and is recorded, as in [toxcalc()].
+#'   and is recorded, as in [tox_test()].
 #'
-#' @return An object of class `toxcalc_lc50`, a list with elements `estimate`
-#'   (a `toxcalc_estimate`), `decisions`, `selected`, `overridden` and `data`.
+#' @return An object of class `tox_lc50`, a list with elements `estimate`
+#'   (a `tox_estimate`), `decisions`, `selected`, `overridden` and `data`.
 #'
 #' @references
 #' US EPA (2002) EPA-821-R-02-012, Figure 6 and section 11.2.
@@ -186,7 +186,7 @@ lc50 <- function(
     chk::chk_subset(method, unname(lc50_terminals()))
   }
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- quantal_prep(x)
 
   walked <- walk_flowchart(
@@ -271,19 +271,19 @@ lc50 <- function(
       flowchart = "EPA-821-R-02-012 Figure 6",
       call = match.call()
     ),
-    class = "toxcalc_lc50"
+    class = "tox_lc50"
   )
 }
 
 #' @describeIn decisions Decision trail from an [lc50()] analysis.
 #' @export
-decisions.toxcalc_lc50 <- function(x, ...) {
+decisions.tox_lc50 <- function(x, ...) {
   chk::chk_unused(...)
   x$decisions
 }
 
 #' @export
-print.toxcalc_lc50 <- function(x, ...) {
+print.tox_lc50 <- function(x, ...) {
   cat("EPA WET point estimate\n")
   cat("  Flowchart: ", x$flowchart, "\n", sep = "")
   cat("  Selected:  ", x$estimate$method, "\n", sep = "")
@@ -301,10 +301,10 @@ print.toxcalc_lc50 <- function(x, ...) {
 
 #' @describeIn lc50 Print the decision trail above the estimate.
 #'
-#' @param object A `toxcalc_lc50` object.
+#' @param object A `tox_lc50` object.
 #'
 #' @export
-summary.toxcalc_lc50 <- function(object, ...) {
+summary.tox_lc50 <- function(object, ...) {
   chk::chk_unused(...)
 
   cat("EPA WET point estimate\n")
@@ -342,7 +342,7 @@ summary.toxcalc_lc50 <- function(object, ...) {
 #' @param optional Unused.
 #'
 #' @export
-as.data.frame.toxcalc_lc50 <- function(
+as.data.frame.tox_lc50 <- function(
   x,
   row.names = NULL,
   optional = FALSE,

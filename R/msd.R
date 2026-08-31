@@ -35,13 +35,13 @@
 #' When the design is unbalanced the difference detectable is not the same at
 #' every concentration, so a value is returned for each.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param test The multiple-comparison procedure whose critical value is used.
 #'   `"dunnett"` is the EPA method for a balanced design; `"bonferroni"` and
 #'   `"sidak"` correspond to the t test with Bonferroni's or Dunn-Sidak's
 #'   adjustment, used when replication is unequal.
 #'
-#' @return An object of class `toxcalc_msd`, a list with elements `msd` (named
+#' @return An object of class `tox_msd`, a list with elements `msd` (named
 #'   by concentration), `critical`, `sw`, `df`, `n_control`, `n`, `test`,
 #'   `alpha` and `balanced`.
 #'
@@ -65,7 +65,7 @@ msd <- function(
   chk::chk_number(alpha)
   chk::chk_range(alpha, c(0, 1))
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- anova_parts(x)
 
   n_control <- parts$n[parts$is_control]
@@ -98,7 +98,7 @@ msd <- function(
       alpha = alpha,
       balanced = length(unique(parts$n)) == 1L
     ),
-    class = "toxcalc_msd"
+    class = "tox_msd"
   )
 }
 
@@ -124,7 +124,7 @@ msd <- function(
 #'   `"fathead_growth"`, or a length-two numeric vector giving the lower and
 #'   upper bounds directly. `NULL` reports the value without comparison.
 #'
-#' @return An object of class `toxcalc_pmsd`, a list with elements `pmsd`
+#' @return An object of class `tox_pmsd`, a list with elements `pmsd`
 #'   (named by concentration), `control_mean`, `bounds`, `status` and the
 #'   underlying `msd` object.
 #'
@@ -144,7 +144,7 @@ pmsd <- function(
   bounds = NULL
 ) {
   test <- match.arg(test)
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   fit <- msd(x, alpha = alpha, test = test)
 
   control_mean <- x$pooled$mean[x$pooled$conc == x$control]
@@ -170,13 +170,13 @@ pmsd <- function(
       status = status,
       msd = fit
     ),
-    class = "toxcalc_pmsd"
+    class = "tox_pmsd"
   )
 }
 
 #' Within mean square, degrees of freedom and replication
 #'
-#' @param x A `toxcalc_data` object.
+#' @param x A `tox_data` object.
 #' @return A list with `sw`, `df`, `conc`, `n` and `is_control`.
 #' @noRd
 anova_parts <- function(x) {
@@ -206,9 +206,9 @@ resolve_bounds <- function(bounds) {
   }
   if (is.character(bounds)) {
     chk::chk_string(bounds)
-    chk::chk_subset(bounds, toxcalc::epa_pmsd_bounds$id)
-    row <- toxcalc::epa_pmsd_bounds[
-      toxcalc::epa_pmsd_bounds$id == bounds,
+    chk::chk_subset(bounds, toxstats::epa_pmsd_bounds$id)
+    row <- toxstats::epa_pmsd_bounds[
+      toxstats::epa_pmsd_bounds$id == bounds,
       ,
       drop = FALSE
     ]
@@ -225,7 +225,7 @@ resolve_bounds <- function(bounds) {
 }
 
 #' @export
-print.toxcalc_msd <- function(x, ...) {
+print.tox_msd <- function(x, ...) {
   cat("Minimum significant difference\n")
   cat("  EPA-821-R-02-013 Appendix C, section 1.10\n\n")
   cat(
@@ -254,7 +254,7 @@ print.toxcalc_msd <- function(x, ...) {
 }
 
 #' @export
-print.toxcalc_pmsd <- function(x, ...) {
+print.tox_pmsd <- function(x, ...) {
   cat("Percent minimum significant difference\n")
   cat("  EPA-821-R-02-013 section 10.2.8\n\n")
   cat("  control mean = ", format(x$control_mean, digits = 4), "\n\n", sep = "")

@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
-library(toxcalc)
+library(toxstats)
 ```
 
 # toxcalc
@@ -52,7 +52,7 @@ answer, the consequence, and the section of the EPA manual that justifies it.
 
 ```{r}
 #| label: audit-trail
-summary(toxcalc(fathead_c1, response = "weight",
+summary(tox_test(fathead_c1, response = "weight",
                 pmsd_bounds = "fathead_growth"))
 ```
 
@@ -68,7 +68,7 @@ estimate together. `branch = "both"` returns them from one call, and
 
 ```{r}
 #| label: both-branches
-fit <- toxcalc(ceriodaphnia_m1, response = "young",
+fit <- tox_test(ceriodaphnia_m1, response = "young",
                branch = "both", seed = 42)
 as.data.frame(fit)[, c("endpoint", "value", "lower", "upper", "method")]
 ```
@@ -126,7 +126,7 @@ neither flowchart will ever select it.
 `R CMD check` is clean. Still to come: the marine manual's endpoints, designs
 with more than one control, and the remaining alternative tests.
 
-See `notes/TOXCALC-human.md` for the plan and `notes/TOXCALC-claude.md` for the
+See `notes/TOXSTATS-human.md` for the plan and `notes/TOXSTATS-claude.md` for the
 specification.
 
 ## Installation
@@ -135,7 +135,7 @@ specification.
 if (!requireNamespace("remotes")) {
   install.packages("remotes")
 }
-remotes::install_github("beckyfisher/toxcalc")
+remotes::install_github("beckyfisher/toxstats")
 ```
 
 ## Standing and licence

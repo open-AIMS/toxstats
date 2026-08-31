@@ -7,10 +7,10 @@
 williams(x, ..., alpha = 0.05, nsim = 20000, seed = 1L)
 }
 \arguments{
-\item{x}{A \code{toxcalc_data()} object, or a data frame that can be coerced to
-one by passing it through \code{toxcalc_data()}.}
+\item{x}{A \code{tox_data()} object, or a data frame that can be coerced to
+one by passing it through \code{tox_data()}.}
 
-\item{...}{Additional arguments passed to \code{toxcalc_data()} when \code{x} is a
+\item{...}{Additional arguments passed to \code{tox_data()} when \code{x} is a
 bare data frame, and otherwise unused.}
 
 \item{alpha}{Significance level for the hypothesis tests themselves. The EPA
@@ -23,7 +23,7 @@ restored afterwards, so calling this function does not disturb any other
 analysis.}
 }
 \value{
-An object of class \code{toxcalc_comparison}, a list with elements
+An object of class \code{tox_comparison}, a list with elements
 \code{test}, \code{method}, \code{comparisons} (a data frame with one row per treatment
 concentration), \code{noec}, \code{loec}, \code{monotone}, \code{critical}, \code{sw}, \code{df},
 \code{alpha} and \code{reference}.

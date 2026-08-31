@@ -42,7 +42,7 @@ test_that("the interpolation follows the manual's own arithmetic", {
 
   expect_equal(round(target, 2), 21.56)
   expect_equal(
-    toxcalc:::interpolate_icp(conc, smoothed, 25)$estimate,
+    toxstats:::interpolate_icp(conc, smoothed, 25)$estimate,
     6.25 + (target - 28.75) * (12.5 - 6.25) / (9.4 - 28.75)
   )
 })
@@ -104,14 +104,14 @@ test_that("omitting the re-smoothing biases the bootstrap badly", {
         vapply(d, mean, numeric(1)),
         direction = "decreasing"
       )
-      toxcalc:::interpolate_icp(conc, means, 25)$estimate
+      toxstats:::interpolate_icp(conc, means, 25)$estimate
     },
     numeric(1)
   )
   unsmoothed <- vapply(
     drawn,
     function(d) {
-      toxcalc:::interpolate_icp(conc, vapply(d, mean, numeric(1)), 25)$estimate
+      toxstats:::interpolate_icp(conc, vapply(d, mean, numeric(1)), 25)$estimate
     },
     numeric(1)
   )
@@ -163,7 +163,7 @@ test_that("the bootstrap summary is reported", {
 test_that("a response that never reaches the target is reported as a bound", {
   # Removing the two concentrations that show any inhibition leaves nothing
   # below 75 per cent of the control.
-  result <- toxcalc:::interpolate_icp(
+  result <- toxstats:::interpolate_icp(
     c(0, 1.56, 3.12, 6.25),
     rep(28.75, 4),
     25

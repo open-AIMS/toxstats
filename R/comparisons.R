@@ -5,7 +5,7 @@
 #' @param comparisons Data frame, one row per treatment concentration.
 #' @param reference Manual section.
 #' @param ... Further named elements specific to the test.
-#' @return An object of class `toxcalc_comparison`.
+#' @return An object of class `tox_comparison`.
 #' @noRd
 new_comparison <- function(test, method, comparisons, reference, ...) {
   endpoints <- derive_noec_loec(
@@ -26,7 +26,7 @@ new_comparison <- function(test, method, comparisons, reference, ...) {
       ),
       list(...)
     ),
-    class = "toxcalc_comparison"
+    class = "tox_comparison"
   )
 }
 
@@ -63,7 +63,7 @@ derive_noec_loec <- function(conc, significant) {
 
 #' Pooled analysis of variance quantities plus per-concentration means
 #'
-#' @param x A `toxcalc_data` object.
+#' @param x A `tox_data` object.
 #' @return A list with `sw`, `df`, `conc`, `n`, `mean` and `control_index`.
 #' @noRd
 comparison_parts <- function(x) {
@@ -96,7 +96,7 @@ effect_sign <- function(direction) {
 }
 
 #' @export
-print.toxcalc_comparison <- function(x, ...) {
+print.tox_comparison <- function(x, ...) {
   cat(x$method, "\n", sep = "")
   cat("  ", x$reference, "\n\n", sep = "")
 

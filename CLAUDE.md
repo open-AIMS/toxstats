@@ -38,7 +38,7 @@ selected and which manual section justifies the selection.
 Faithful to the EPA method manuals, validated against the worked examples
 printed in them. **Not** a bit-for-bit clone of ToxCalc; no ToxCalc outputs are
 available for comparison. Where a manual is ambiguous, the choice made is
-documented in `notes/TOXCALC-claude.md` rather than left implicit.
+documented in `notes/TOXSTATS-claude.md` rather than left implicit.
 
 ### Specification sources
 
@@ -65,12 +65,12 @@ The runtime dependency list is deliberately short: `chk`, `kSamples`, `mvtnorm`
 and `stats`. Packages in Suggests (`MASS`, `multcomp`, `nortest`, `boot`) are
 used **only in tests, as independent oracles** for methods implemented here from
 first principles. Do not move a Suggests package into Imports without recording
-why in `notes/TOXCALC-claude.md`.
+why in `notes/TOXSTATS-claude.md`.
 
 Statistical tables reproduced in the EPA manuals from third-party sources
 (Williams' critical values from *Biometrics*, Dunnett's from Miller 1981,
 Conover's Shapiro-Wilk coefficients) are **not** transcribed into this package.
-Critical values are computed instead. See `notes/TOXCALC-claude.md`.
+Critical values are computed instead. See `notes/TOXSTATS-claude.md`.
 
 ---
 
@@ -89,11 +89,11 @@ prompts/        # session prompt logs (see Section 6)
 
 Two house conventions carried over from `toxval`:
 
-- `R/toxcalc-package.R` holds `"_PACKAGE"` plus the `@importFrom` block, between
+- `R/toxstats-package.R` holds `"_PACKAGE"` plus the `@importFrom` block, between
   the `## usethis namespace: start` / `end` marker comments.
-- `R/toxcalc-params.R` is a documentation-only `NULL` object holding every
+- `R/toxstats-params.R` is a documentation-only `NULL` object holding every
   shared `@param` tag. Functions inherit from it with
-  `@inheritParams toxcalc_params` so each argument is described exactly once.
+  `@inheritParams toxstats_params` so each argument is described exactly once.
 
 Argument validation uses `chk::chk_*` predicates throughout, following
 `ssdtools` rather than `toxval`. Validation is factored into shared internal
@@ -103,7 +103,7 @@ validators, not duplicated across entry points.
 
 ## 5. Git Workflow
 
-Single remote, `origin` = `https://github.com/beckyfisher/toxcalc`. Work
+Single remote, `origin` = `https://github.com/beckyfisher/toxstats`. Work
 branches off `main`; there is no fork or upstream.
 
 ---

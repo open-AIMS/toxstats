@@ -14,7 +14,7 @@ test_that("one concentration gives the ordinary t critical value", {
   # check that the simulation machinery is right; everything else rests on it.
   set.seed(1)
   for (df in c(10, 15, 30)) {
-    simulated <- toxcalc:::williams_null(
+    simulated <- toxstats:::williams_null(
       n_control = 4,
       n_doses = 4,
       df = df,
@@ -75,19 +75,19 @@ test_that("the isotonic estimate is the smallest trailing weighted average", {
   y <- c(10, 8, 9, 4)
   w <- rep(1, 4)
   expect_equal(
-    toxcalc:::isotonic_last(y, w),
+    toxstats:::isotonic_last(y, w),
     min(mean(y), mean(y[2:4]), mean(y[3:4]), y[4])
   )
   # An already monotone sequence is left alone at the last position.
-  expect_equal(toxcalc:::isotonic_last(c(10, 8, 4), rep(1, 3)), 4)
+  expect_equal(toxstats:::isotonic_last(c(10, 8, 4), rep(1, 3)), 4)
 })
 
 test_that("the isotonic step respects weights", {
   y <- c(10, 4)
-  expect_equal(toxcalc:::isotonic_last(y, c(1, 1)), 4)
+  expect_equal(toxstats:::isotonic_last(y, c(1, 1)), 4)
   # min over trailing runs: the whole run gives (1*4 + 3*10)/4 = 8.5, the
   # trailing single value gives 10, so 8.5 is the estimate.
-  expect_equal(toxcalc:::isotonic_last(c(4, 10), c(1, 3)), 8.5)
+  expect_equal(toxstats:::isotonic_last(c(4, 10), c(1, 3)), 8.5)
 })
 
 test_that("the isotonic means absorb a departure from monotonicity", {
@@ -177,13 +177,13 @@ test_that("the result is labelled as a non-EPA extension", {
 test_that("the flowchart never selects Williams, but it can be forced", {
   # It is not a terminal of the chart, so reaching it always counts as an
   # override and always warns.
-  expect_false("williams" %in% unname(toxcalc:::flowchart_terminals()))
+  expect_false("williams" %in% unname(toxstats:::flowchart_terminals()))
 
   # Two warnings fire here: the override and the monotonicity note. Both are
   # collected rather than matched one at a time, so neither masks the other.
   raised <- character()
   fit <- withCallingHandlers(
-    toxcalc(fathead_c1, response = "weight", test = "williams"),
+    tox_test(fathead_c1, response = "weight", test = "williams"),
     warning = function(w) {
       raised <<- c(raised, conditionMessage(w))
       invokeRestart("muffleWarning")

@@ -1,4 +1,4 @@
-# Tests for the input contract in R/toxcalc_data.R
+# Tests for the input contract in R/tox_data.R
 
 # fixtures ------------------------------------------------------------------
 #
@@ -45,10 +45,10 @@ survival_data <- function() {
 
 # continuous ----------------------------------------------------------------
 
-test_that("toxcalc_data accepts a continuous endpoint", {
-  x <- toxcalc_data(growth_data(), response = "growth")
+test_that("tox_data accepts a continuous endpoint", {
+  x <- tox_data(growth_data(), response = "growth")
 
-  expect_s3_class(x, "toxcalc_data")
+  expect_s3_class(x, "tox_data")
   expect_equal(x$type, "continuous")
   expect_equal(x$direction, "decreasing")
   expect_equal(x$control, 0)
@@ -59,7 +59,7 @@ test_that("toxcalc_data accepts a continuous endpoint", {
 
 test_that("pooled summaries match a direct calculation", {
   raw <- growth_data()
-  x <- toxcalc_data(raw, response = "growth")
+  x <- tox_data(raw, response = "growth")
   control <- raw$growth[raw$conc == 0]
 
   expect_equal(x$pooled$conc, c(0, 32, 64, 128, 256))
@@ -71,8 +71,8 @@ test_that("pooled summaries match a direct calculation", {
 
 # quantal -------------------------------------------------------------------
 
-test_that("toxcalc_data accepts a quantal endpoint", {
-  x <- toxcalc_data(
+test_that("tox_data accepts a quantal endpoint", {
+  x <- tox_data(
     survival_data(),
     response = "dead",
     n_exposed = "exposed",
@@ -93,7 +93,7 @@ test_that("toxcalc_data accepts a quantal endpoint", {
 
 test_that("quantal data requires n_exposed", {
   expect_error(
-    toxcalc_data(survival_data(), response = "dead", type = "quantal"),
+    tox_data(survival_data(), response = "dead", type = "quantal"),
     regexp = "n_exposed"
   )
 })
@@ -102,7 +102,7 @@ test_that("quantal data rejects impossible counts", {
   bad <- survival_data()
   bad$dead[1] <- 11
   expect_error(
-    toxcalc_data(
+    tox_data(
       bad,
       response = "dead",
       n_exposed = "exposed",
@@ -114,7 +114,7 @@ test_that("quantal data rejects impossible counts", {
   negative <- survival_data()
   negative$dead[1] <- -1
   expect_error(
-    toxcalc_data(
+    tox_data(
       negative,
       response = "dead",
       n_exposed = "exposed",
@@ -129,7 +129,7 @@ test_that("quantal data rejects impossible counts", {
 test_that("rows with a missing response are dropped and counted", {
   raw <- growth_data()
   raw$growth[c(2, 5)] <- NA
-  x <- toxcalc_data(raw, response = "growth")
+  x <- tox_data(raw, response = "growth")
 
   expect_equal(x$n_dropped, 2L)
   expect_equal(nrow(x$replicates), 18)
@@ -142,7 +142,7 @@ test_that("a wholly missing response is an error", {
   raw <- growth_data()
   raw$growth <- NA_real_
   expect_error(
-    toxcalc_data(raw, response = "growth"),
+    tox_data(raw, response = "growth"),
     regexp = "no rows with a non-missing response"
   )
 })
@@ -151,18 +151,18 @@ test_that("a wholly missing response is an error", {
 
 test_that("the control must be a concentration present in the data", {
   expect_error(
-    toxcalc_data(growth_data(), response = "growth", control = 5),
+    tox_data(growth_data(), response = "growth", control = 5),
     regexp = "must be one of the concentrations"
   )
 })
 
 test_that("column names must exist in the data", {
   expect_error(
-    toxcalc_data(growth_data(), response = "biomass"),
+    tox_data(growth_data(), response = "biomass"),
     regexp = "biomass"
   )
   expect_error(
-    toxcalc_data(growth_data(), conc = "dose", response = "growth"),
+    tox_data(growth_data(), conc = "dose", response = "growth"),
     regexp = "dose"
   )
 })
@@ -171,21 +171,21 @@ test_that("negative concentrations and empty data are rejected", {
   negative <- growth_data()
   negative$conc[1] <- -1
   expect_error(
-    toxcalc_data(negative, response = "growth"),
+    tox_data(negative, response = "growth"),
     regexp = "greater than or equal to"
   )
   expect_error(
-    toxcalc_data(growth_data()[0, ], response = "growth"),
+    tox_data(growth_data()[0, ], response = "growth"),
     regexp = "at least one row"
   )
 })
 
 test_that("direction must be one of the two recognised values", {
   expect_error(
-    toxcalc_data(growth_data(), response = "growth", direction = "flat"),
+    tox_data(growth_data(), response = "growth", direction = "flat"),
     regexp = "should be one of"
   )
-  x <- toxcalc_data(
+  x <- tox_data(
     growth_data(),
     response = "growth",
     direction = "increasing"
@@ -196,25 +196,25 @@ test_that("direction must be one of the two recognised values", {
 # replicate labels ----------------------------------------------------------
 
 test_that("replicate labels are generated when not supplied", {
-  x <- toxcalc_data(growth_data(), response = "growth")
+  x <- tox_data(growth_data(), response = "growth")
   expect_equal(x$replicates$replicate[1:4], as.character(1:4))
 })
 
 test_that("supplied replicate labels are retained", {
   raw <- growth_data()
   raw$rep <- rep(LETTERS[1:4], times = 5)
-  x <- toxcalc_data(raw, response = "growth", replicate = "rep")
+  x <- tox_data(raw, response = "growth", replicate = "rep")
   expect_equal(sort(unique(x$replicates$replicate)), LETTERS[1:4])
 })
 
 # methods -------------------------------------------------------------------
 
 test_that("methods return the documented pieces", {
-  x <- toxcalc_data(growth_data(), response = "growth")
+  x <- tox_data(growth_data(), response = "growth")
 
   expect_identical(summary(x), x$pooled)
   expect_identical(as.data.frame(x), x$replicates)
-  expect_output(print(x), "toxcalc_data")
+  expect_output(print(x), "tox_data")
   expect_output(print(x), "balanced")
   # print returns its input invisibly
   capture.output(returned <- print(x))
@@ -224,5 +224,5 @@ test_that("methods return the documented pieces", {
 test_that("print reports an unbalanced design as such", {
   raw <- growth_data()
   raw$growth[1] <- NA
-  expect_output(print(toxcalc_data(raw, response = "growth")), "unbalanced")
+  expect_output(print(tox_data(raw, response = "growth")), "unbalanced")
 })

@@ -300,23 +300,23 @@ flowchart_terminals <- function() {
 #' of the manual that justifies it.
 #'
 #' @param x An object carrying a decision trail, such as the result of
-#'   [toxcalc()].
+#'   [tox_test()].
 #' @param ... Unused.
 #'
 #' @return A data frame with columns `step`, `node`, `question`, `criterion`,
 #'   `statistic`, `p_value`, `answer`, `outcome` and `reference`.
 #'
 #' @examples
-#' decisions(toxcalc(fathead_c1, response = "weight"))
+#' decisions(tox_test(fathead_c1, response = "weight"))
 #'
 #' @export
 decisions <- function(x, ...) {
   UseMethod("decisions")
 }
 
-#' @describeIn decisions Decision trail from a `toxcalc` analysis.
+#' @describeIn decisions Decision trail from a `tox_test` analysis.
 #' @export
-decisions.toxcalc <- function(x, ...) {
+decisions.tox_test <- function(x, ...) {
   chk::chk_unused(...)
   x$decisions
 }

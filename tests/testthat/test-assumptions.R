@@ -20,7 +20,7 @@ test_that("epa_normality reproduces the Appendix B Shapiro-Wilk example", {
 test_that("epa_normality tests the pooled within-group centred residuals", {
   # Not the raw values: the raw weights span five concentration means and are
   # not expected to be normal even when the residuals are.
-  x <- toxcalc_data(fathead_b1, response = "weight")
+  x <- tox_data(fathead_b1, response = "weight")
   residuals <- fathead_b1$weight -
     ave(fathead_b1$weight, fathead_b1$conc, FUN = mean)
 
@@ -35,7 +35,7 @@ test_that("epa_normality tests the pooled within-group centred residuals", {
 })
 
 test_that("epa_normality decides against the assumption alpha", {
-  x <- toxcalc_data(fathead_b1, response = "weight")
+  x <- tox_data(fathead_b1, response = "weight")
   # p is about 0.55 here, so the conclusion is stable across sensible alphas.
   expect_true(epa_normality(x, alpha_assumption = 0.01)$normal)
   expect_true(epa_normality(x, alpha_assumption = 0.05)$normal)
@@ -61,7 +61,7 @@ test_that("epa_normality reproduces the Appendix B Kolmogorov example", {
 })
 
 test_that("the Kolmogorov critical values match Table B.11", {
-  x <- toxcalc_data(ceriodaphnia_b7, response = "young")
+  x <- tox_data(ceriodaphnia_b7, response = "young")
   expected <- c(
     "0.01" = 1.035,
     "0.025" = 0.955,
@@ -94,8 +94,8 @@ test_that("the Kolmogorov test rejects an untabulated alpha", {
 })
 
 test_that("method selection follows the 50 observation rule", {
-  small <- toxcalc_data(fathead_b1, response = "weight")
-  large <- toxcalc_data(ceriodaphnia_b7, response = "young")
+  small <- tox_data(fathead_b1, response = "weight")
+  large <- tox_data(ceriodaphnia_b7, response = "young")
 
   expect_match(epa_normality(small)$method, "Shapiro-Wilk")
   expect_match(epa_normality(large)$method, "Kolmogorov")
@@ -137,7 +137,7 @@ test_that("the manual's Bartlett value follows from its rounded variances", {
 })
 
 test_that("epa_variance offers robust alternatives, flagged as non-EPA", {
-  x <- toxcalc_data(fathead_b1, response = "weight")
+  x <- tox_data(fathead_b1, response = "weight")
 
   levene <- epa_variance(x, method = "levene")
   fligner <- epa_variance(x, method = "fligner")
@@ -183,7 +183,7 @@ test_that("the manual's Kolmogorov value follows from rounding z to 2 dp", {
   # which means rounding z to two decimal places first. Doing the same
   # reproduces its D = 0.0597 and D* = 0.4684; working at full precision gives
   # 0.0583 and 0.4572. Both are far below the 1.035 critical value.
-  x <- toxcalc_data(ceriodaphnia_b7, response = "young")
+  x <- tox_data(ceriodaphnia_b7, response = "young")
   residuals <- ceriodaphnia_b7$young -
     ave(ceriodaphnia_b7$young, ceriodaphnia_b7$conc, FUN = function(z) {
       round(mean(z), 1)

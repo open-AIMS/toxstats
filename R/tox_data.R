@@ -26,9 +26,9 @@
 #' whose bootstrap resamples within a concentration and so depends on how many
 #' replicates each concentration actually has.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #'
-#' @return An object of class `toxcalc_data`, a list with elements:
+#' @return An object of class `tox_data`, a list with elements:
 #'   \describe{
 #'     \item{`replicates`}{a data frame with one row per replicate, holding
 #'       `conc`, `replicate`, `response`, and for quantal data `n_exposed` and
@@ -56,10 +56,10 @@
 #'     0.216, 0.277, 0.328, 0.347
 #'   )
 #' )
-#' toxcalc_data(growth, response = "growth")
+#' tox_data(growth, response = "growth")
 #'
 #' @export
-toxcalc_data <- function(
+tox_data <- function(
   data,
   conc = "conc",
   response = "response",
@@ -185,7 +185,7 @@ toxcalc_data <- function(
       n_dropped = n_dropped,
       call = match.call()
     ),
-    class = "toxcalc_data"
+    class = "tox_data"
   )
 }
 
@@ -224,13 +224,13 @@ pool_replicates <- function(x, type) {
   out
 }
 
-#' @describeIn toxcalc_data Print a compact description of the design.
+#' @describeIn tox_data Print a compact description of the design.
 #'
-#' @param x A `toxcalc_data` object.
+#' @param x A `tox_data` object.
 #'
 #' @export
-print.toxcalc_data <- function(x, ...) {
-  cat("<toxcalc_data>\n")
+print.tox_data <- function(x, ...) {
+  cat("<tox_data>\n")
   cat(
     "  ",
     x$type,
@@ -262,24 +262,24 @@ print.toxcalc_data <- function(x, ...) {
   invisible(x)
 }
 
-#' @describeIn toxcalc_data Return the per-concentration summary.
+#' @describeIn tox_data Return the per-concentration summary.
 #'
-#' @param object A `toxcalc_data` object.
+#' @param object A `tox_data` object.
 #' @param ... Unused, present for consistency with the generic.
 #'
 #' @export
-summary.toxcalc_data <- function(object, ...) {
+summary.tox_data <- function(object, ...) {
   chk::chk_unused(...)
   object$pooled
 }
 
-#' @describeIn toxcalc_data Return the validated replicate-level data.
+#' @describeIn tox_data Return the validated replicate-level data.
 #'
 #' @param row.names Unused, present for consistency with the generic.
 #' @param optional Unused, present for consistency with the generic.
 #'
 #' @export
-as.data.frame.toxcalc_data <- function(
+as.data.frame.tox_data <- function(
   x,
   row.names = NULL,
   optional = FALSE,

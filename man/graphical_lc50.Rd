@@ -7,14 +7,14 @@
 graphical_lc50(x, ...)
 }
 \arguments{
-\item{x}{A \code{toxcalc_data()} object, or a data frame that can be coerced to
-one by passing it through \code{toxcalc_data()}.}
+\item{x}{A \code{tox_data()} object, or a data frame that can be coerced to
+one by passing it through \code{tox_data()}.}
 
-\item{...}{Additional arguments passed to \code{toxcalc_data()} when \code{x} is a
+\item{...}{Additional arguments passed to \code{tox_data()} when \code{x} is a
 bare data frame, and otherwise unused.}
 }
 \value{
-An object of class \code{toxcalc_estimate}.
+An object of class \code{tox_estimate}.
 }
 \description{
 Interpolates between the two concentrations that bracket 50 per cent

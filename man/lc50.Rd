@@ -2,21 +2,21 @@
 % Please edit documentation in R/lc50.R
 \name{lc50}
 \alias{lc50}
-\alias{summary.toxcalc_lc50}
-\alias{as.data.frame.toxcalc_lc50}
+\alias{summary.tox_lc50}
+\alias{as.data.frame.tox_lc50}
 \title{Estimate a median lethal concentration}
 \usage{
 lc50(x, ..., p = c(1, 50), ci_level = 0.95, alpha = 0.05, method = NULL)
 
-\method{summary}{toxcalc_lc50}(object, ...)
+\method{summary}{tox_lc50}(object, ...)
 
-\method{as.data.frame}{toxcalc_lc50}(x, row.names = NULL, optional = FALSE, ...)
+\method{as.data.frame}{tox_lc50}(x, row.names = NULL, optional = FALSE, ...)
 }
 \arguments{
-\item{x}{A \code{toxcalc_data()} object, or a data frame that can be coerced to
-one by passing it through \code{toxcalc_data()}.}
+\item{x}{A \code{tox_data()} object, or a data frame that can be coerced to
+one by passing it through \code{tox_data()}.}
 
-\item{...}{Additional arguments passed to \code{toxcalc_data()} when \code{x} is a
+\item{...}{Additional arguments passed to \code{tox_data()} when \code{x} is a
 bare data frame, and otherwise unused.}
 
 \item{p}{The effect percentage or percentages to estimate, on a 1-99 scale.
@@ -30,17 +30,17 @@ manuals specify 0.05, one-sided.}
 \item{method}{Optional. Name of a method to use instead of the one the
 flowchart selects: one of \code{"probit_lc"}, \code{"spearman_karber"},
 \code{"trimmed_spearman_karber"} or \code{"graphical_lc50"}. Forcing a method warns
-and is recorded, as in \code{\link[=toxcalc]{toxcalc()}}.}
+and is recorded, as in \code{\link[=tox_test]{tox_test()}}.}
 
-\item{object}{A \code{toxcalc_lc50} object.}
+\item{object}{A \code{tox_lc50} object.}
 
 \item{row.names}{Unused.}
 
 \item{optional}{Unused.}
 }
 \value{
-An object of class \code{toxcalc_lc50}, a list with elements \code{estimate}
-(a \code{toxcalc_estimate}), \code{decisions}, \code{selected}, \code{overridden} and \code{data}.
+An object of class \code{tox_lc50}, a list with elements \code{estimate}
+(a \code{tox_estimate}), \code{decisions}, \code{selected}, \code{overridden} and \code{data}.
 }
 \description{
 Walks the EPA point-estimation flowchart, selects the method the manual
@@ -59,11 +59,11 @@ concentration is excluded for complete response: section 9.5.2 of the
 chronic manual is explicit that concentrations dropped from the
 no-observed-effect concentration are retained here.
 }
-\section{Methods (by generic)}{
+\section{Functions}{
 \itemize{
-\item \code{summary(toxcalc_lc50)}: Print the decision trail above the estimate.
+\item \code{summary(tox_lc50)}: Print the decision trail above the estimate.
 
-\item \code{as.data.frame(toxcalc_lc50)}: Return the estimates as a data frame.
+\item \code{as.data.frame(tox_lc50)}: Return the estimates as a data frame.
 
 }}
 \examples{

@@ -4,7 +4,7 @@
 #' monotone non-decreasing, and adjusts for control response with Abbott's
 #' formula. All four EPA point-estimation methods begin here.
 #'
-#' @param x A `toxcalc_data` object of type "quantal".
+#' @param x A `tox_data` object of type "quantal".
 #' @return A list with `conc`, `x` (log10 concentration), `n`, `observed`,
 #'   `smoothed`, `adjusted` and `control_smoothed`, the first six excluding the
 #'   control.
@@ -12,7 +12,7 @@
 quantal_prep <- function(x) {
   if (x$type != "quantal") {
     chk::abort_chk(
-      "Point estimation needs quantal data; call `toxcalc_data()` with ",
+      "Point estimation needs quantal data; call `tox_data()` with ",
       "`type = \"quantal\"` and an `n_exposed` column."
     )
   }
@@ -62,7 +62,7 @@ new_estimate <- function(method, estimates, working, reference, ...) {
       ),
       list(...)
     ),
-    class = "toxcalc_estimate"
+    class = "tox_estimate"
   )
 }
 
@@ -96,9 +96,9 @@ epa_multiplier <- function(ci_level) {
 #' No confidence interval is available. The manual gives none, and with no
 #' partial response there is no information from which to construct one.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #'
-#' @return An object of class `toxcalc_estimate`.
+#' @return An object of class `tox_estimate`.
 #'
 #' @references
 #' US EPA (2002) EPA-821-R-02-012, section 11.2.2.
@@ -113,7 +113,7 @@ epa_multiplier <- function(ci_level) {
 #'
 #' @export
 graphical_lc50 <- function(x, ...) {
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- quantal_prep(x)
 
   if (!any(parts$adjusted < 0.5) || !any(parts$adjusted >= 0.5)) {
@@ -175,7 +175,7 @@ graphical_lc50 <- function(x, ...) {
 #' concentration and one at the highest. When it is not, the flowchart directs
 #' the analysis to [trimmed_spearman_karber()].
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #'
 #' @inherit graphical_lc50 return
 #'
@@ -198,7 +198,7 @@ spearman_karber <- function(x, ..., ci_level = 0.95) {
   chk::chk_number(ci_level)
   chk::chk_range(ci_level, c(0, 1))
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- quantal_prep(x)
   k <- length(parts$adjusted)
 
@@ -291,7 +291,7 @@ spearman_karber <- function(x, ..., ci_level = 0.95) {
 #' against the 69.74 to 85.26 the manual prints, a difference in the third
 #' significant figure. The point estimate is unaffected.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param trim The proportion to trim from each tail, or `NULL` for the
 #'   automatic trim defined above.
 #'
@@ -319,7 +319,7 @@ trimmed_spearman_karber <- function(x, ..., trim = NULL, ci_level = 0.95) {
   chk::chk_range(ci_level, c(0, 1))
   chk::chk_null_or(trim, vld = chk::vld_number)
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- quantal_prep(x)
 
   automatic <- is.null(trim)
@@ -492,7 +492,7 @@ recompute_tsk <- function(observed, control, x, trim, automatic) {
 #' exercise this, its chi-square being well below the tabular value, so the
 #' behaviour is offered under `heterogeneity` and defaults to applying it.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param heterogeneity Should the variance be inflated by `chi-square / df`
 #'   when the heterogeneity chi-square is significant at `alpha`? A flag.
 #'
@@ -527,7 +527,7 @@ probit_lc <- function(
   chk::chk_range(ci_level, c(0, 1))
   chk::chk_flag(heterogeneity)
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   parts <- quantal_prep(x)
 
   # Abbott adjustment of the observed proportions, as the manual's own output
@@ -659,7 +659,7 @@ working_frame <- function(parts) {
 }
 
 #' @export
-print.toxcalc_estimate <- function(x, ...) {
+print.tox_estimate <- function(x, ...) {
   cat(x$method, "\n", sep = "")
   cat("  ", x$reference, "\n\n", sep = "")
 

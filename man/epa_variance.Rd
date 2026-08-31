@@ -12,10 +12,10 @@ epa_variance(
 )
 }
 \arguments{
-\item{x}{A \code{toxcalc_data()} object, or a data frame that can be coerced to
-one by passing it through \code{toxcalc_data()}.}
+\item{x}{A \code{tox_data()} object, or a data frame that can be coerced to
+one by passing it through \code{tox_data()}.}
 
-\item{...}{Additional arguments passed to \code{toxcalc_data()} when \code{x} is a
+\item{...}{Additional arguments passed to \code{tox_data()} when \code{x} is a
 bare data frame, and otherwise unused.}
 
 \item{method}{Which test to use. \code{"bartlett"} is the EPA method and the
@@ -25,7 +25,7 @@ default.}
 (normality and homogeneity of variance). The EPA manuals specify 0.01.}
 }
 \value{
-An object of class \code{toxcalc_htest}, a list with elements \code{method},
+An object of class \code{tox_htest}, a list with elements \code{method},
 \code{statistic}, \code{statistic_name}, \code{p_value}, \code{critical}, \code{alpha}, \code{df},
 \code{homogeneous}, \code{conclusion} and \code{reference}.
 }

@@ -32,11 +32,11 @@
 #' values in the manuals' Table B.11. It has no p-value, only a decision at the
 #' tabulated alpha levels of 0.010, 0.025, 0.050, 0.100 and 0.150.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param method Which statistic to use. `"auto"` (the default) follows the
 #'   manuals: Shapiro-Wilk for 50 or fewer observations, Kolmogorov above that.
 #'
-#' @return An object of class `toxcalc_htest`, a list with elements `method`,
+#' @return An object of class `tox_htest`, a list with elements `method`,
 #'   `statistic`, `statistic_name`, `p_value`, `critical`, `alpha`, `n`,
 #'   `normal`, `conclusion` and `reference`.
 #'
@@ -65,7 +65,7 @@ epa_normality <- function(
   chk::chk_number(alpha_assumption)
   chk::chk_range(alpha_assumption, c(0, 1))
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   residuals <- centred_residuals(x)
   n <- length(residuals)
 
@@ -198,11 +198,11 @@ kolmogorov_result <- function(residuals, alpha) {
 #' Both values lead to the same conclusion. This package computes from the
 #' unrounded data.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param method Which test to use. `"bartlett"` is the EPA method and the
 #'   default.
 #'
-#' @return An object of class `toxcalc_htest`, a list with elements `method`,
+#' @return An object of class `tox_htest`, a list with elements `method`,
 #'   `statistic`, `statistic_name`, `p_value`, `critical`, `alpha`, `df`,
 #'   `homogeneous`, `conclusion` and `reference`.
 #'
@@ -227,7 +227,7 @@ epa_variance <- function(
   chk::chk_number(alpha_assumption)
   chk::chk_range(alpha_assumption, c(0, 1))
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   y <- analysis_response(x)
   g <- factor(x$replicates$conc)
 

@@ -67,10 +67,10 @@
 #' is **not** implemented. A warning is raised when the design would have
 #' triggered it.
 #'
-#' @inheritParams toxcalc_params
+#' @inheritParams toxstats_params
 #' @param p The percentage reductions to estimate, on a 1 to 99 scale.
 #'
-#' @return An object of class `toxcalc_estimate`, with an additional `boot`
+#' @return An object of class `tox_estimate`, with an additional `boot`
 #'   element holding the resampled estimates, the count that could not be
 #'   computed, and the seed used.
 #'
@@ -106,7 +106,7 @@ icp <- function(
   chk::chk_range(ci_level, c(0, 1))
   chk::chk_null_or(seed, vld = chk::vld_whole_number)
 
-  x <- as_toxcalc_data(x, ...)
+  x <- as_tox_data(x, ...)
   response <- analysis_response(x)
   group <- factor(x$replicates$conc)
   conc <- as.numeric(levels(group))

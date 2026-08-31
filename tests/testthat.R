@@ -1,4 +1,4 @@
 library(testthat)
-library(toxcalc)
+library(toxstats)
 
-test_check("toxcalc")
+test_check("toxstats")

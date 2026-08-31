@@ -43,7 +43,7 @@ test_that("msd handles an unbalanced design per concentration", {
 })
 
 test_that("the Bonferroni and Sidak critical values bracket sensibly", {
-  x <- toxcalc_data(fathead_c1, response = "weight")
+  x <- tox_data(fathead_c1, response = "weight")
   dunnett <- msd(x, test = "dunnett")$critical
   bonferroni <- msd(x, test = "bonferroni")$critical
   sidak <- msd(x, test = "sidak")$critical
@@ -90,7 +90,7 @@ test_that("pmsd compares against the EPA Table 6 bounds", {
 })
 
 test_that("pmsd flags values outside the bounds in both directions", {
-  x <- toxcalc_data(fathead_c1, response = "weight")
+  x <- tox_data(fathead_c1, response = "weight")
 
   expect_true(all(pmsd(x, bounds = c(30, 40))$status == "below_lower"))
   expect_true(all(pmsd(x, bounds = c(5, 10))$status == "above_upper"))

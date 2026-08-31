@@ -1,7 +1,7 @@
-# toxcalc — specification
+# toxstats — specification
 
 Implementation specification for `toxcalc`. Written to be implemented from
-directly. The collaborator-facing companion is `notes/TOXCALC-human.md`; every
+directly. The collaborator-facing companion is `notes/TOXSTATS-human.md`; every
 decision is stated in full **here** and only summarised there.
 
 Status: Phases 0 to 8 complete; the package is usable and nothing outstanding
@@ -249,7 +249,7 @@ supports only the first.
 | `replicate` | optional label | optional label |
 
 ```r
-toxcalc_data(
+tox_data(
   data,
   conc           = "conc",
   response       = "response",
@@ -285,7 +285,7 @@ chk::chk_range(alpha, c(0, 1)); chk::chk_range(p, c(1, 99))
 ```r
 structure(
   list(
-    data       = <toxcalc_data>,
+    data       = <tox_data>,
     design     = list(n_conc, n_rep, balanced, control_level, control_response,
                       n_partial_mortality, monotone, min_reps),
     hypothesis = <toxcalc_hypothesis> | NULL,
@@ -619,7 +619,7 @@ them; the same reasoning appears, less densely, in
 
 8. **Multiple controls** (Phase 9). The marine manual uses brine controls and,
    for some methods, both a dilution-water and a solvent control.
-   `toxcalc_data(control = )` currently takes one value.
+   `tox_data(control = )` currently takes one value.
 
 9. **Marine manual scope** (Phase 9). Sea urchin fertilisation is quantal per
    replicate; *Champia parvula* cystocarp counts have a different replicate
@@ -632,14 +632,14 @@ them; the same reasoning appears, less densely, in
 | Phase | Content | Definition of done |
 |---|---|---|
 | **0** | Scaffold: DESCRIPTION, package/params files, air, editorconfig, gitattributes, LICENSE, NEWS, pkgdown, three workflows, build script, Rbuildignore, CLAUDE.md | `R CMD check` 0/0/0 with zero exports. **DONE.** |
-| **1** | `toxcalc_data()` + methods; `arcsine_sqrt()` / `inv_arcsine_sqrt()` with the Bartlett (1937) endpoint adjustments; `smooth_monotone()` (PAVA, both directions, optional weights); `is_monotone()`; `abbott()` | **DONE.** Reproduces App B 4.2 (`RP = 0.60 -> 0.8861`; `RP = 0, n = 20 -> 0.1120`; `RP = 1 -> 1.4588`) and App K smoothing (`0.02`). PAVA, not pairwise averaging: the App K case pools five values at once. |
+| **1** | `tox_data()` + methods; `arcsine_sqrt()` / `inv_arcsine_sqrt()` with the Bartlett (1937) endpoint adjustments; `smooth_monotone()` (PAVA, both directions, optional weights); `is_monotone()`; `abbott()` | **DONE.** Reproduces App B 4.2 (`RP = 0.60 -> 0.8861`; `RP = 0, n = 20 -> 0.1120`; `RP = 1 -> 1.4588`) and App K smoothing (`0.02`). PAVA, not pairwise averaging: the App K case pools five values at once. |
 | **2** | `epa_normality()` (pooled centred within-group residuals; Royston, Kolmogorov D above n = 50 with Table B.11); `epa_variance()` (Bartlett, plus Levene and Fligner flagged non-EPA); `msd()`, `pmsd()`; deterministic Dunnett critical value in `R/critical.R`; the three EPA datasets and `epa_pmsd_bounds` | **DONE.** App B `W = 0.9601` vs printed 0.959; Bartlett 6.836 with the printed 7.691 reconciled; Kolmogorov `D* = 0.4572` with the printed 0.4684 reconciled; App C `Sw = 0.0971`, `t = 1.486, 0.248, 1.635, 3.248`, `d = 2.3561` vs tabled 2.36, `MSD = 0.1619`, `PMSD = 23.9%`. 175 assertions. |
-| **3** | `dunnett()`, `bonferroni_t()`, `dunn_sidak_t()`, `welch_t()`, `steel()`, `wilcoxon_rank_sum()`, `fisher_exact()`, sharing the `toxcalc_comparison` class and the NOEC/LOEC derivation | **DONE.** App C: `t = 1.486, 0.248, 1.635, 3.248`, critical 2.3561, NOEC 128, LOEC 256. App D: `t = 1.622, 0.270, 1.785, 4.028`, critical 2.510, NOEC 128, LOEC 256. App E: rank sums 84, 63.5, 76, 55, NOEC 3, LOEC 6. App F: rank sums 79, 57, 58, 55, NOEC 3, LOEC 6. App G: NOEC 12, LOEC 25. 254 assertions. |
-| **4** | `walk_flowchart()`, chart data, `decisions()`, `toxcalc()`, print/summary/as.data.frame with snapshot tests, exclusion rules (9.5.2), lower-PMSD override (10.2.8.2.5), override warning, a `@no_valid_test` terminal | **DONE.** App C end to end: normal (W = 0.951, p = 0.378), homogeneous (B = 7.856, p = 0.097), balanced, so the chart selects Dunnett and returns NOEC 128, LOEC 256, MSD 0.162, PMSD 23.9% within the Table 6 bounds. App E end to end with the 50% concentration excluded: normality fails (W = 0.928, p = 0.0047), 10 replicates, balanced, so the chart selects Steel and returns NOEC 3, LOEC 6. Both match the manual's own test selection and endpoints. 338 assertions. **First releasable version.** |
+| **3** | `dunnett()`, `bonferroni_t()`, `dunn_sidak_t()`, `welch_t()`, `steel()`, `wilcoxon_rank_sum()`, `fisher_exact()`, sharing the `tox_comparison` class and the NOEC/LOEC derivation | **DONE.** App C: `t = 1.486, 0.248, 1.635, 3.248`, critical 2.3561, NOEC 128, LOEC 256. App D: `t = 1.622, 0.270, 1.785, 4.028`, critical 2.510, NOEC 128, LOEC 256. App E: rank sums 84, 63.5, 76, 55, NOEC 3, LOEC 6. App F: rank sums 79, 57, 58, 55, NOEC 3, LOEC 6. App G: NOEC 12, LOEC 25. 254 assertions. |
+| **4** | `walk_flowchart()`, chart data, `decisions()`, `tox_test()`, print/summary/as.data.frame with snapshot tests, exclusion rules (9.5.2), lower-PMSD override (10.2.8.2.5), override warning, a `@no_valid_test` terminal | **DONE.** App C end to end: normal (W = 0.951, p = 0.378), homogeneous (B = 7.856, p = 0.097), balanced, so the chart selects Dunnett and returns NOEC 128, LOEC 256, MSD 0.162, PMSD 23.9% within the Table 6 bounds. App E end to end with the 50% concentration excluded: normality fails (W = 0.928, p = 0.0047), 10 replicates, balanced, so the chart selects Steel and returns NOEC 3, LOEC 6. Both match the manual's own test selection and endpoints. 338 assertions. **First releasable version.** |
 | **5** | `graphical_lc50()`, `spearman_karber()`, `trimmed_spearman_karber()`, `probit_lc()`, the Figure 6 chart and the `lc50()` driver | **DONE.** All four Table 20 columns route to the method they were built for and reproduce the published estimate. Graphical 35.36 (manual reads 35 off the plot); SK `m = 1.65652`, `V = 0.001098`, 45.3 (38.9, 52.8) exactly; TSK trim 20.51% and 20.41% on the two published examples, LC50 77.11 exactly; probit Pearson chi-square 3.076, LC50 22.872 (18.787, 27.846) and LC1 7.924 (4.147, 10.959) exactly. 437 assertions. |
 | **6** | `icp()` with in-loop re-smoothing and the EPA order-statistic interval | **DONE.** App M smoothed means 28.75, 28.75, 28.75, 28.75, 9.4, 0 exactly; `IC25 = 8.5715` and `IC50 = 10.893` exactly; ICPIN's printed standard deviations reproduced. The interval cannot be matched: ICPIN's own output names the seed (-641671986) it drew 80 resamples with. Reproducible under a seed; undefined-resample accounting reported. **Correction to the original spec:** omitting the in-loop re-smoothing does not narrow the interval as predicted, it *biases* it, giving a bootstrap mean of 10.4 against a point estimate of 8.57. 474 assertions. |
 | **7** | `williams()` with simulated critical values, the isotonic step, the step-down procedure and a monotonicity precondition | **DONE.** No EPA worked example and no retrievable table exist, so validation is by identity: with one concentration there is no order restriction and the simulated critical value must equal `qt(1-alpha, nu)`, which it does at every df tested. Critical values rise with position and sit below Dunnett's (1.76, 1.83, 1.88, 1.87 against 2.356 on the App C design). Seeded by default and restores the caller's RNG stream. Never selected by either flowchart; reaching it always warns. 514 assertions. |
-| **8** | `branch = "both"` on `toxcalc()` wiring the point estimate alongside the hypothesis test, long-format `as.data.frame()`, executable `README.Rmd`, pkgdown reference index grouped by flowchart branch | **DONE.** One call returns the NOEC, LOEC, MSD, PMSD and the point estimate, choosing `lc50()` for a quantal endpoint and `icp()` for a continuous one, with the point branch using all the data as section 9.5.2 requires. No `"point"`-only option: `lc50()` and `icp()` already serve that and are easier to find. `pkgdown::check_pkgdown()` clean. 536 assertions. |
+| **8** | `branch = "both"` on `tox_test()` wiring the point estimate alongside the hypothesis test, long-format `as.data.frame()`, executable `README.Rmd`, pkgdown reference index grouped by flowchart branch | **DONE.** One call returns the NOEC, LOEC, MSD, PMSD and the point estimate, choosing `lc50()` for a quantal endpoint and `icp()` for a continuous one, with the point branch using all the data as section 9.5.2 requires. No `"point"`-only option: `lc50()` and `icp()` already serve that and are easier to find. `pkgdown::check_pkgdown()` clean. 536 assertions. |
 | **9** | Not started, and not needed. The acute single-concentration chart, the marine manual, multiple controls, a formal monotonicity test, Shirley-Williams | Set out item by item with scope, effort and definition of done in **§11**. The 2010 Test of Significant Toxicity is deliberately out of scope. |
 
 ---
@@ -699,7 +699,7 @@ is what it was built for.
 `pass_fail` result class, and a driver.
 
 *Definition of done.* The chart is walked, the result reports Pass or Fail with
-the same decision trail as `toxcalc()`, and the acute manual's
+the same decision trail as `tox_test()`, and the acute manual's
 single-concentration worked example reproduces if one exists. **Check whether it
 does before starting** — I have not looked.
 
@@ -725,7 +725,7 @@ EPA-821-R-02-012 and EPA-821-R-02-013.
 
 ### 11.3 Designs with more than one control
 
-*What.* `toxcalc_data(control = )` takes a single value. The marine manual uses
+*What.* `tox_data(control = )` takes a single value. The marine manual uses
 brine controls, and some methods use both a dilution-water and a solvent
 control.
 

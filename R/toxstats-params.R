@@ -2,11 +2,11 @@
 #'
 #' Documentation-only object holding the `@param` tags shared across the
 #' package. Every exported function inherits from it with
-#' `@inheritParams toxcalc_params`, so each argument is described in exactly
+#' `@inheritParams toxstats_params`, so each argument is described in exactly
 #' one place and cannot drift between topics.
 #'
-#' @param x A `toxcalc_data()` object, or a data frame that can be coerced to
-#'   one by passing it through `toxcalc_data()`.
+#' @param x A `tox_data()` object, or a data frame that can be coerced to
+#'   one by passing it through `tox_data()`.
 #' @param data A data frame with one row per replicate test chamber.
 #' @param conc Name of the column holding the exposure concentration. A string.
 #' @param response Name of the column holding the response. For
@@ -36,9 +36,9 @@
 #'   concentration confidence limits.
 #' @param seed Optional integer seed, set before any resampling so that results
 #'   are reproducible. `NULL` leaves the random number stream untouched.
-#' @param ... Additional arguments passed to `toxcalc_data()` when `x` is a
+#' @param ... Additional arguments passed to `tox_data()` when `x` is a
 #'   bare data frame, and otherwise unused.
 #'
-#' @name toxcalc_params
+#' @name toxstats_params
 #' @keywords internal
 NULL

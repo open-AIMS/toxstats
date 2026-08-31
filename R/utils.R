@@ -1,18 +1,18 @@
-#' Coerce to a toxcalc_data object
+#' Coerce to a tox_data object
 #'
-#' Lets every user-facing function accept either a prepared [toxcalc_data()]
+#' Lets every user-facing function accept either a prepared [tox_data()]
 #' object or a bare data frame plus the arguments needed to prepare one.
 #'
-#' @param x A `toxcalc_data` object or a data frame.
-#' @param ... Passed to [toxcalc_data()] when `x` is a data frame.
-#' @return A `toxcalc_data` object.
+#' @param x A `tox_data` object or a data frame.
+#' @param ... Passed to [tox_data()] when `x` is a data frame.
+#' @return A `tox_data` object.
 #' @noRd
-as_toxcalc_data <- function(x, ...) {
-  if (inherits(x, "toxcalc_data")) {
+as_tox_data <- function(x, ...) {
+  if (inherits(x, "tox_data")) {
     chk::chk_unused(...)
     return(x)
   }
-  toxcalc_data(x, ...)
+  tox_data(x, ...)
 }
 
 #' The response the hypothesis-testing flowchart operates on
@@ -22,7 +22,7 @@ as_toxcalc_data <- function(x, ...) {
 #' counts, which is why this distinction is made in one place rather than at
 #' every call site.
 #'
-#' @param x A `toxcalc_data` object.
+#' @param x A `tox_data` object.
 #' @return A numeric vector, one element per replicate.
 #' @noRd
 analysis_response <- function(x) {
@@ -35,7 +35,7 @@ analysis_response <- function(x) {
 #' EPA manuals test for normality -- not the raw values, and not each
 #' concentration separately (Appendix B, section 2.3).
 #'
-#' @param x A `toxcalc_data` object.
+#' @param x A `tox_data` object.
 #' @return A numeric vector, one element per replicate.
 #' @noRd
 centred_residuals <- function(x) {
@@ -46,14 +46,14 @@ centred_residuals <- function(x) {
 #' Build a result object shared by the assumption and hypothesis tests
 #'
 #' @param ... Named elements of the result.
-#' @return An object of class `toxcalc_htest`.
+#' @return An object of class `tox_htest`.
 #' @noRd
 new_htest <- function(...) {
-  structure(list(...), class = "toxcalc_htest")
+  structure(list(...), class = "tox_htest")
 }
 
 #' @export
-print.toxcalc_htest <- function(x, ...) {
+print.tox_htest <- function(x, ...) {
   cat(x$method, "\n", sep = "")
   cat("  ", x$reference, "\n\n", sep = "")
   cat("  ", x$statistic_name, " = ", format(x$statistic, digits = 5), sep = "")

@@ -13,7 +13,7 @@ knitr:
 ```{r}
 #| label: setup
 #| include: false
-library(toxcalc)
+library(toxstats)
 ```
 
 ## Purpose
@@ -349,7 +349,7 @@ the printed output is not a comment that can drift away from the code:
 
 ```{r}
 #| label: chart
-chart <- toxcalc:::flowchart_hypothesis_multi()
+chart <- toxstats:::flowchart_hypothesis_multi()
 chart[, c("node", "yes", "no", "reference")]
 ```
 
@@ -363,7 +363,7 @@ case raises an error rather than falling through to something plausible.
 
 ```{r}
 #| label: end-to-end
-summary(toxcalc(fathead_c1, response = "weight",
+summary(tox_test(fathead_c1, response = "weight",
                 pmsd_bounds = "fathead_growth"))
 ```
 
@@ -403,7 +403,7 @@ nothing and removes that risk.
 ```{r}
 #| label: override
 fit <- withCallingHandlers(
-  toxcalc(fathead_c1, response = "weight", test = "steel"),
+  tox_test(fathead_c1, response = "weight", test = "steel"),
   warning = function(w) invokeRestart("muffleWarning")
 )
 c(selected_by_flowchart = fit$selected, actually_run = fit$comparison$test)
@@ -553,7 +553,7 @@ get quietly wrong.
 manual mentions Williams' test only as an alternative that "requires additional
 assumptions". Neither manual gives a worked example, a critical value table, or
 a place for it on any flowchart. It is in the package because ToxCalc offered
-it. `lc50()` and `toxcalc()` never select it; reaching it always counts as an
+it. `lc50()` and `tox_test()` never select it; reaching it always counts as an
 override and always warns.
 
 **Critical values are simulated.** Williams tabulated them in *Biometrics*, so

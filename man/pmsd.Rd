@@ -13,10 +13,10 @@ pmsd(
 )
 }
 \arguments{
-\item{x}{A \code{toxcalc_data()} object, or a data frame that can be coerced to
-one by passing it through \code{toxcalc_data()}.}
+\item{x}{A \code{tox_data()} object, or a data frame that can be coerced to
+one by passing it through \code{tox_data()}.}
 
-\item{...}{Additional arguments passed to \code{toxcalc_data()} when \code{x} is a
+\item{...}{Additional arguments passed to \code{tox_data()} when \code{x} is a
 bare data frame, and otherwise unused.}
 
 \item{alpha}{Significance level for the hypothesis tests themselves. The EPA
@@ -32,7 +32,7 @@ adjustment, used when replication is unequal.}
 upper bounds directly. \code{NULL} reports the value without comparison.}
 }
 \value{
-An object of class \code{toxcalc_pmsd}, a list with elements \code{pmsd}
+An object of class \code{tox_pmsd}, a list with elements \code{pmsd}
 (named by concentration), \code{control_mean}, \code{bounds}, \code{status} and the
 underlying \code{msd} object.
 }
