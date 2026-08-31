@@ -102,10 +102,15 @@ whose formula it does not state, and Hamilton's corrected variance expression is
 not publicly retrievable, so the delta method is used instead. The trim itself
 and the point estimate both reproduce exactly. See the vignette.
 
+`icp()` completes the sublethal side, estimating an inhibition concentration by
+linear interpolation with bootstrap limits. It reproduces the Appendix M
+example exactly: smoothed means of 28.75 across the control and the three
+lowest concentrations, `IC25 = 8.5715` and `IC50 = 10.893`.
+
 `R CMD check` is clean at every phase.
 
-Still to come: the inhibition concentration by linear interpolation, and
-Williams' test.
+Still to come: Williams' test, which is the ToxCalc feature that is not an EPA
+method.
 
 The vignette `vignettes/recreating-toxcalc.qmd` records every point at which the
 source material was ambiguous, internally inconsistent, or at odds with modern

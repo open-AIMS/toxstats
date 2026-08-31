@@ -366,3 +366,91 @@ stopifnot(
 )
 
 usethis::use_data(acute_table20, overwrite = TRUE)
+
+# Table M.1 -- Ceriodaphnia dubia reproduction, used for the linear
+# interpolation worked example in Appendix M.
+#
+# This shares four columns with Table B.7 but is not the same dataset: M.1 has
+# no counterpart to B.7's 12.5 per cent column, and its own 12.5 per cent
+# column holds what B.7 records at 25 per cent, with a further concentration of
+# complete inhibition added.
+ceriodaphnia_m1 <- data.frame(
+  conc = rep(c(0, 1.56, 3.12, 6.25, 12.5, 25.0), each = 10),
+  replicate = rep(as.character(1:10), times = 6),
+  young = c(
+    27,
+    30,
+    29,
+    31,
+    16,
+    15,
+    18,
+    17,
+    14,
+    27,
+    32,
+    35,
+    32,
+    26,
+    18,
+    29,
+    27,
+    16,
+    35,
+    13,
+    39,
+    30,
+    33,
+    33,
+    36,
+    33,
+    33,
+    27,
+    38,
+    44,
+    27,
+    34,
+    36,
+    34,
+    31,
+    27,
+    33,
+    31,
+    33,
+    31,
+    10,
+    13,
+    7,
+    7,
+    7,
+    10,
+    10,
+    16,
+    12,
+    2,
+    rep(0, 10)
+  )
+)
+
+# Table M.1 prints these means, and the ICPIN output prints these standard
+# deviations and pooled (smoothed) means.
+check_printed(
+  ceriodaphnia_m1,
+  "young",
+  "conc",
+  mean,
+  c(22.4, 26.3, 34.6, 31.7, 9.4, 0),
+  1,
+  "Table M.1 means"
+)
+check_printed(
+  ceriodaphnia_m1,
+  "young",
+  "conc",
+  sd,
+  c(6.931, 8.001, 4.835, 2.946, 3.893, 0),
+  3,
+  "Table M.1 standard deviations"
+)
+
+usethis::use_data(ceriodaphnia_m1, overwrite = TRUE)

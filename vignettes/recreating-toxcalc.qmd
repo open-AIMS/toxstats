@@ -499,6 +499,50 @@ This is recorded here rather than buried, because it is the only quantity in
 the package known to differ from a published EPA value for a reason other than
 an error in the manual.
 
+### 16. The inhibition concentration, and the step that is easy to miss
+
+**Decision.** The bootstrap re-smooths the concentration means **inside** every
+iteration.
+
+**Reasoning.** The manual's step list places smoothing at step 4 and resampling
+at step 6, which reads as though the smoothing happens once. Leaving it out of
+the loop is not a small error. Unsmoothed resampled means are not monotone, so
+the interpolation selects the wrong bracketing pair, and the resampled
+estimates drift away from the point estimate altogether. On the Appendix M data
+they then average about 10.4 against a point estimate of 8.57, with a standard
+deviation of 0.49 rather than 0.14.
+
+That is worth recording precisely because the original plan for this package
+predicted the opposite — that omitting the re-smoothing would make the interval
+too narrow. Measuring it showed a bias, not a narrowing.
+
+```{r}
+#| label: icp
+icp(ceriodaphnia_m1, response = "young", p = c(25, 50), seed = 42)
+```
+
+The estimates reproduce the manual exactly: 8.5715 for the IC25 against a
+printed 8.5715, and 10.893 for the IC50 against 10.89. So do the smoothed
+means, 28.75 across the control and the three lowest concentrations, and the
+standard deviations the ICPIN output prints.
+
+**Smoothing weights.** The means are smoothed with equal weight on each
+concentration, not weighted by the number of replicates. That is what
+reproduces the manual's 28.75. With unequal replication the manual does not say
+what it does, and this is a documented assumption rather than a verified one.
+
+**The interval cannot be reproduced, and not because of any disagreement.** The
+manual's limits of 8.3112 and 9.0418 come from 80 resamples drawn with the seed
+-641671986 by a Turbo Pascal generator, which is stated in the output itself. No
+other program can return those numbers. What can be checked is the shape of the
+interval: at 1000 resamples this package gives about 8.34 to 8.91, and the
+point estimate, the smoothed means and the bootstrap standard deviation are all
+reproducible under a seed.
+
+The default of 200 resamples departs from the manual's 80. The manual itself
+warns that limits "based on the empirical quantiles of a bootstrap distribution
+of 80 samples may be unstable", and permits up to 1000.
+
 ## Still open
 
 Two of the four questions raised when this package was planned have since been

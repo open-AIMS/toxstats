@@ -150,7 +150,7 @@ with all four EPA methods and the chart that chooses between them. *Done:*
 reproduces five worked examples, including the trimmed Spearman-Karber trims of
 20.51% and 20.41% printed in the two manuals.
 
-**Phase 6 — inhibition concentrations.** *Purpose:* the ICp method for sublethal
+**Phase 6 — inhibition concentrations. Complete.** *Purpose:* the ICp method for sublethal
 endpoints, with bootstrap confidence limits. *Done:* reproduces the Appendix M
 IC25 of 8.57% and IC50 of 10.89%.
 

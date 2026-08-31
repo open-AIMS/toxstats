@@ -300,3 +300,54 @@ and say nothing actionable; separation is recorded on the result instead.
 R CMD check clean at 0/0/0; 437 assertions passing.
 
 ---
+**User:** continue with phase 6
+
+**Claude:** Implemented Phase 6, `icp()`, the EPA linear interpolation method
+for estimating an inhibition concentration, with bootstrap confidence limits.
+Appendix M of the chronic manual and the ICPIN program output reproduced there
+were read directly.
+
+**The estimate reproduces the manual exactly.** The smoothed means come out at
+28.75 across the control and the three lowest concentrations, then 9.4 and 0,
+matching Table M.2. The concentration standard deviations match those the ICPIN
+output prints. `IC25 = 8.5715` against a printed 8.5715 and `IC50 = 10.893`
+against 10.89.
+
+Smoothing uses pool-adjacent-violators with equal weight on each concentration
+mean rather than weighting by replication, which is what produces 28.75. With
+unequal replication the manual does not say what it does, so this is recorded as
+a documented assumption rather than a verified one.
+
+**A correction to the original plan.** The specification predicted that
+omitting the re-smoothing from inside the bootstrap loop would make the interval
+"far too narrow". Measuring it showed the opposite and worse: it biases the
+estimate. On the Appendix M data the resampled estimates then average about 10.4
+against a point estimate of 8.57, with a standard deviation of 0.49 rather than
+0.14, because unsmoothed resampled means are not monotone and the interpolation
+selects the wrong bracketing pair. The prediction was wrong in direction, not
+just in degree, and the test now asserts the measured bias rather than the
+predicted narrowing.
+
+**The interval cannot be reproduced, and not because of any disagreement.** The
+ICPIN output states the seed it used, -641671986, for 80 resamples drawn by a
+Turbo Pascal generator. No other program can return its printed limits of 8.3112
+and 9.0418. What is reproducible, and what the tests check, is the point
+estimate, the smoothed means, the bootstrap standard deviation under a seed, and
+the order-statistic rule the manual describes as "the second smallest and second
+largest" of 80 resamples, generalised to `floor((nboot + 1) * (1 - ci_level)/2)`
+in from each end. At 1000 resamples the interval comes out at about 8.34 to
+8.91 against the manual's 8.31 to 9.04.
+
+The default of 200 resamples departs from the manual's 80, on the manual's own
+grounds: it warns that limits based on 80 samples "may be unstable" and permits
+up to 1000.
+
+The expanded interval the manual reports when there are fewer than seven
+replicates per concentration is not implemented, its definition appearing only
+in the ICPIN version 2.0 documentation, which is not publicly retrievable. A
+warning is raised when a design would have triggered it, rather than the
+omission being silent.
+
+R CMD check clean at 0/0/0; 474 assertions passing.
+
+---
