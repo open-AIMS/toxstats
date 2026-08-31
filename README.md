@@ -43,8 +43,18 @@ sources.
 
 ## Status
 
-**Experimental, under active development.** The package scaffold is in place and
-passes `R CMD check` cleanly; the statistical methods are being added in phases.
+**Experimental, under active development.** Phases 0 to 2 are complete: the data
+layer, the EPA transformations and monotone smoothing, the normality and
+homogeneity-of-variance tests, and the minimum significant difference. The
+package passes `R CMD check` cleanly at every phase. The individual hypothesis
+tests, the flowchart engine and the point-estimation methods are still to come.
+
+The vignette `vignettes/recreating-toxcalc.qmd` records every point at which the
+source material was ambiguous, internally inconsistent, or at odds with modern
+practice, and what was decided in each case, with the evidence. Four of the
+manuals' printed statistics have so far been found not to follow from their own
+data; each is reconciled by a test rather than quietly worked around.
+
 See `notes/TOXCALC-human.md` for the plan and `notes/TOXCALC-claude.md` for the
 specification.
 

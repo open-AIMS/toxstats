@@ -4,7 +4,9 @@ Implementation specification for `toxcalc`. Written to be implemented from
 directly. The collaborator-facing companion is `notes/TOXCALC-human.md`; every
 decision is stated in full **here** and only summarised there.
 
-Status: Phase 0 complete. Phases 1-9 specified below.
+Status: Phases 0, 1 and 2 complete. Phases 3-9 specified below. Decisions taken
+since this document was first written are recorded in the package vignette
+`vignettes/recreating-toxcalc.qmd`, which is the collaborator-facing record.
 
 ---
 
@@ -142,13 +144,42 @@ toxic** if its relative difference from the control is less than the lower PMSD
 bound. This is a post-hoc override of the significance result and must be
 applied after the test, with its own row in the decision trail.
 
-### 2.6 Manual errata
+### 2.6 Manual errata, all confirmed numerically
 
-The manuals contain arithmetic typos. Appendix C computes `MSD = 0.162` and then
-states in 1.11 that "the minimum difference ... is 0.087 mg. This represents a
-decrease in growth of 24%". 24% of the 0.677 control mean is 0.162, so 0.087 is
-the typo. **Every fixture must be checked for internal consistency before being
-frozen into a test, not transcribed on faith.**
+**Every fixture must be checked for internal consistency before being frozen
+into a test, not transcribed on faith.** Four defects have been confirmed so
+far. Each is reconciled by a test in the suite, so it cannot later be mistaken
+for an implementation error.
+
+1. **Appendix C section 1.11 gives the MSD as 0.087 mg.** The same section
+   computes 0.162, and 24% of the 0.677 control mean is 0.162. The 0.087 is the
+   typo. *Confirmed:* recomputing from Table C.1 gives `Sw = 0.0971`,
+   `MSD = 0.1619`, `PMSD = 23.9%`.
+
+2. **Appendix C states its data are "the same data used in Appendices B and
+   D". They are not.** Table C.1 differs from Table B.1 at most values. Table
+   B.1 has a control mean of 0.714 and `Sw = 0.052`; Table C.1 has 0.677 and
+   0.097, and only Table C.1 reproduces the printed `t` values, critical value
+   and MSD. Both are shipped separately as `fathead_b1` and `fathead_c1`.
+
+3. **Bartlett `B = 7.691` (Appendix B 3.5) is not reproducible from the raw
+   data, which give 6.836.** *Confirmed:* the manual computes from its own
+   printed variances rounded to 4 dp, giving `sum(log) = -32.4771` exactly, and
+   then divides by `C` rounded to 1.133. One of those variances is itself
+   misrounded: 0.002055 is printed as 0.0020. Bartlett depends on the log of
+   each variance, so the smallest variance dominates the error.
+
+4. **Kolmogorov `D* = 0.4684` (Appendix B 2.10) is not reproducible; the
+   correct value is 0.4572.** *Confirmed:* rounding each `z` to 2 dp, as
+   required to use a printed normal table, reproduces `D = 0.0597` and
+   `D* = 0.4683` against the printed 0.4684.
+
+In all four cases the conclusion the manual draws is unchanged.
+
+Two further printed values agree once the manual's own rounding is applied and
+are therefore **not** errata: Shapiro-Wilk `W = 0.959` (Royston gives 0.9601
+unrounded, 0.9594 with the manual's 3 dp concentration means) and the Dunnett
+critical value 2.36 (integration gives 2.3561).
 
 ---
 
@@ -165,7 +196,7 @@ values are computed instead:
 
 | Need | Computed route | Why it is at least as good |
 |---|---|---|
-| Dunnett critical value | `mvtnorm::qmvt()` with `rho_ij = sqrt((n_i n_j)/((n_0+n_i)(n_0+n_j)))` | Exact; also covers the unbalanced case, which Table C.5 does not. The reproduced table in the source PDF has visible OCR corruption (`1.86` at nu=120/k=1; `3.17` at nu=24/k=3). |
+| Dunnett critical value | Numerical integration of the one-factor multivariate t (`stats::integrate` + `stats::uniroot`) | Exact and **deterministic**; covers the unbalanced case, which Table C.5 does not. `mvtnorm::qmvt()` was rejected: it is randomised and returned 2.3552 to 2.3585 across calls on the same design. The reproduced table in the source PDF also has visible OCR corruption. |
 | Shapiro-Wilk | `stats::shapiro.test` (Royston AS R94) | Agrees with Conover's tabled `W` to about three decimals. |
 | Williams' `t-bar` | Monte Carlo null quantile for the observed design | No transcription risk, no interpolation risk, and handles designs the published tables never covered. |
 | Steel's Many-One Rank | `kSamples::Steel.test` | Implements the Appendix E procedure with an exact or simulated joint null, better than the tabled approximation. |
@@ -474,15 +505,15 @@ Per §3, critical values are obtained by Monte Carlo, not from the tables.
 ## 7. Dependencies
 
 ```
-Imports:  chk (>= 0.10.0), kSamples (>= 1.2.10), mvtnorm (>= 1.2-0), stats
-Suggests: boot, covr, knitr, MASS, multcomp, nortest, rmarkdown,
+Imports:  chk (>= 0.10.0), kSamples (>= 1.2.10), stats
+Suggests: boot, covr, knitr, MASS, multcomp, mvtnorm, nortest, quarto, rmarkdown,
           testthat (>= 3.0.0), withr
 ```
 
 Imports are added to `DESCRIPTION` in the phase that first uses them, so
 `R CMD check` stays clean at every phase. Phase 0 declares `stats` only.
 
-**Why `mvtnorm` and not `multcomp`.** `multcomp` would be used for exactly one
+**Why neither `multcomp` nor `mvtnorm`.** `multcomp` would be used for exactly one
 thing, the multivariate-t Dunnett critical value and adjusted p-value, which is
 `mvtnorm::qmvt()` and `pmvt()` in about ten lines. `mvtnorm` has no further
 dependencies; `multcomp` pulls `survival`, `TH.data`, `sandwich` and
@@ -510,18 +541,29 @@ dependencies; `multcomp` pulls `survival`, `TH.data`, `sandwich` and
 ## 8. Open decisions
 
 These are **not to be guessed**. Each needs a recorded answer before the phase
-that depends on it.
+that depends on it. Resolved items are kept here with the evidence that settled
+them; the same reasoning appears, less densely, in
+`vignettes/recreating-toxcalc.qmd`.
 
-1. **Shapiro-Wilk implementation** (Phase 2). EPA specifies Conover's tabled
-   coefficients with a hard `alpha = 0.01` cutoff; `stats::shapiro.test` uses
-   Royston AS R94 and returns a p-value. They agree on `W` to about three
-   decimals but the decision rules differ in form. *Proposed:* Royston default,
-   `method = "shapiro_conover"` available, both `W` and `p` reported. Changes
-   which branch is taken in borderline cases.
+1. ~~**Shapiro-Wilk implementation**~~ **RESOLVED (Phase 2): Royston only.**
+   `stats::shapiro.test` returns `W = 0.9601` on the Appendix B example against
+   the printed 0.959, and 0.9594 once the manual's 3 dp rounding of the
+   concentration means is applied. The agreement removed the reason to
+   implement Conover's tabled route as well, and implementing it would have
+   meant transcribing Tables B.4 and B.6, which §3 forbids. Both `W` and the
+   p-value are reported so a borderline case is visible.
 
-2. **Dunnett critical values** (Phase 3). Exact `mvtnorm` by default;
-   `critical = "epa_table"` not offered, per §3. Confirm that reproducing EPA's
-   printed Table C.5 value exactly is not required.
+2. ~~**Dunnett critical values**~~ **RESOLVED (Phase 2): numerical
+   integration, not `mvtnorm`.** `mvtnorm::qmvt()` is randomised quasi-Monte
+   Carlo and returned values from 2.3552 to 2.3585 across calls on the
+   Appendix C design; a regulatory analysis must be reproducible. The `k`
+   comparisons share a control, so the correlation is one-factor
+   (`rho_ij = lambda_i lambda_j`, `lambda_i = sqrt(n_i/(n_0+n_i))`) and
+   conditioning on the common factor and the pooled scale reduces the problem
+   to a two-dimensional integral, evaluated by `stats::integrate` and inverted
+   by `stats::uniroot`. Returns 2.35614 against the tabled 2.36, identically on
+   every call. `mvtnorm` moved from Imports to Suggests, where it is a test
+   oracle. See `R/critical.R`.
 
 3. **TSK confidence interval convention** (Phase 5). Multiplier (1.96 vs 2.0)
    and variance denominator (`n_i` vs `n_i - 1`) are not both determinable from
@@ -568,9 +610,9 @@ that depends on it.
 
 | Phase | Content | Definition of done |
 |---|---|---|
-| **0** | Scaffold: DESCRIPTION, package/params files, air, editorconfig, gitattributes, LICENSE, NEWS, pkgdown, three workflows, build script, Rbuildignore, CLAUDE.md | `R CMD check` 0/0/0 with zero exports. **Complete.** |
-| **1** | `toxcalc_data()` + methods; `arcsine_sqrt()` / `inv_arcsine_sqrt()` with the Bartlett (1937) modification at 0 and 1; `smooth_monotone()` (PAVA, both directions, optional weights); `abbott()`; EPA example datasets | Reproduces App B 4.2 (`RP = 0.60 -> 0.8861`; `RP = 0, N = 20 -> 0.1120`; `RP = 1 -> 1.4588`), App L smoothing (`0.0125`), App M smoothing (`28.75`), App K smoothing (`0.02`). Useful alone: the EPA arcsine and smoothing exist in no CRAN package. |
-| **2** | `epa_normality()` (pooled centered within-group residuals; Royston default, Kolmogorov D for n > 50 with Table B.11); `epa_variance()`; `msd()`, `pmsd()` with the App C 1.11.2 back-transform and the Table 6 bounds dataset | App B `W = 0.959` (n = 20); Section 12 `W = 0.846`; Bartlett `B = 7.691` vs 13.277; App C `MSD = 0.162`, 24% of control; back-transformed `MSD_u = 0.149`, 38.0% |
+| **0** | Scaffold: DESCRIPTION, package/params files, air, editorconfig, gitattributes, LICENSE, NEWS, pkgdown, three workflows, build script, Rbuildignore, CLAUDE.md | `R CMD check` 0/0/0 with zero exports. **DONE.** |
+| **1** | `toxcalc_data()` + methods; `arcsine_sqrt()` / `inv_arcsine_sqrt()` with the Bartlett (1937) endpoint adjustments; `smooth_monotone()` (PAVA, both directions, optional weights); `is_monotone()`; `abbott()` | **DONE.** Reproduces App B 4.2 (`RP = 0.60 -> 0.8861`; `RP = 0, n = 20 -> 0.1120`; `RP = 1 -> 1.4588`) and App K smoothing (`0.02`). PAVA, not pairwise averaging: the App K case pools five values at once. |
+| **2** | `epa_normality()` (pooled centred within-group residuals; Royston, Kolmogorov D above n = 50 with Table B.11); `epa_variance()` (Bartlett, plus Levene and Fligner flagged non-EPA); `msd()`, `pmsd()`; deterministic Dunnett critical value in `R/critical.R`; the three EPA datasets and `epa_pmsd_bounds` | **DONE.** App B `W = 0.9601` vs printed 0.959; Bartlett 6.836 with the printed 7.691 reconciled; Kolmogorov `D* = 0.4572` with the printed 0.4684 reconciled; App C `Sw = 0.0971`, `t = 1.486, 0.248, 1.635, 3.248`, `d = 2.3561` vs tabled 2.36, `MSD = 0.1619`, `PMSD = 23.9%`. 175 assertions. |
 | **3** | The seven flowchart tests, common `toxcalc_comparison` class | Dunnett reproduces `t = 1.487, 0.248, 1.633, 3.251`, critical 2.36, NOEC = 128; Bonferroni-t reproduces App D; Steel reproduces the App E rank sums; Fisher reproduces App G |
 | **4** | `walk_flowchart()`, chart data, `decisions()`, `toxcalc()` hypothesis branch, print/summary with snapshot tests, exclusion rules (9.5.2), lower-PMSD override (10.2.8.2.5), override warning | End-to-end reproduction of the Section 12 fathead embryo-larval example and the App B/C growth example. **First releasable version.** |
 | **5** | `graphical_lc50()`, `spearman_karber()`, `trimmed_spearman_karber()`, `probit_lc()`, and the Fig. 6 chart | Acute Table 20: Graphical 35%; SK `m = 1.656527`, `V(m) = 0.0010977`, LC50 45.3% (38.9, 52.8); TSK trim 20.51%, LC50 77.11 (69.74, 85.26); App K trim 20.41%, LC50 77.28; Probit chi-sq 3.076, LC50 22.872 (18.787, 27.846), LC1 7.924 (4.147, 10.959) |

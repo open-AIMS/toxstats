@@ -1,0 +1,325 @@
+---
+title: "Recreating ToxCalc: methods and decisions"
+vignette: >
+  %\VignetteIndexEntry{Recreating ToxCalc: methods and decisions}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(toxcalc)
+```
+
+## Purpose
+
+This vignette records how `toxcalc` was built and, more importantly, **every
+point at which the source material was ambiguous, internally inconsistent, or
+at odds with modern practice, and what was decided in each case**.
+
+The package recreates ToxCalc v5.0 (Tidepool Scientific), commercial software
+implementing the US EPA Whole Effluent Toxicity methods, which has been
+withdrawn. No ToxCalc output was available for comparison, so the specification
+is taken from the EPA method manuals themselves and validated against the
+worked examples printed in them.
+
+Every decision below is stated with the evidence that settled it. Where the
+package departs from a figure printed in a manual, the departure is
+demonstrated, not asserted: each is reconciled by a test in the package test
+suite, so the discrepancy cannot later be mistaken for an implementation error.
+
+## Sources
+
+- EPA-821-R-02-012, *Methods for Measuring the Acute Toxicity of Effluents and
+  Receiving Waters to Freshwater and Marine Organisms*, 5th edition, October
+  2002.
+- EPA-821-R-02-013, *Short-term Methods for Estimating the Chronic Toxicity of
+  Effluents and Receiving Waters to Freshwater Organisms*, 4th edition, October
+  2002. Section references below are to this manual unless stated otherwise.
+
+Both are US Government works and are publicly available.
+
+## The decisions
+
+### 1. Statistical tables are computed, not transcribed
+
+**Decision.** No table of critical values reproduced in the EPA manuals from a
+third-party source is copied into this package. Critical values are computed.
+
+**Reasoning.** The manuals are US Government works, but several tables *within*
+them are reproductions credited to other authors: Dunnett's Table C.5 to Miller
+(1981), the Shapiro-Wilk coefficients of Table B.4 to Conover (1980), and
+Williams' critical values to *Biometrics*. Permission to reproduce a table in a
+government manual does not transfer to a third party redistributing it.
+
+Two further considerations point the same way. Computation covers designs the
+tables never did, in particular unbalanced replication. And the reproduction in
+the source document is not always reliable: the Dunnett table as printed
+contains values corrupted in transcription, including 1.86 at 120 degrees of
+freedom with one treatment, where the sequence requires a value near 1.66.
+
+Only tables EPA generated itself are shipped: the Kolmogorov critical values of
+Table B.11, and the variability criteria of Table 6, which EPA derived from its
+own interlaboratory study.
+
+### 2. Dunnett's critical value is integrated, not simulated
+
+**Decision.** The critical value is obtained by numerical integration, using
+`stats::integrate` and `stats::uniroot`. The obvious alternative,
+`mvtnorm::qmvt()`, is not used, and `mvtnorm` is not a dependency.
+
+**Reasoning.** `qmvt()` uses randomised quasi-Monte Carlo integration and
+returns a different answer on every call. For the Appendix C design it returned
+values between 2.3552 and 2.3572 across repeated calls. An analysis submitted
+to a regulator must give the same answer every time it is run.
+
+Because all the comparisons share the same control, the correlation matrix has
+a one-factor form: the correlation between comparisons `i` and `j` is
+`lambda_i * lambda_j`, where `lambda_i = sqrt(n_i / (n_control + n_i))`.
+Conditioning on that single common factor, and on the pooled standard
+deviation, reduces the multivariate t probability to a two-dimensional
+integral, which ordinary quadrature evaluates to machine precision.
+
+The result agrees with the manual's table and is stable:
+
+```{r}
+#| label: dunnett
+fit <- msd(fathead_c1, response = "weight")
+fit$critical           # EPA Table C.5 prints 2.36
+replicate(3, msd(fathead_c1, response = "weight")$critical)
+```
+
+### 3. Shapiro-Wilk follows Royston, not the manual's tables
+
+**Decision.** Normality is tested with `stats::shapiro.test()`, which uses
+Royston's AS R94 algorithm, and the p-value is compared with the assumption
+significance level. The manual's procedure — looking up Conover's coefficients
+in Table B.4 and comparing the statistic with a quantile in Table B.6 — is not
+implemented.
+
+**Reasoning.** The two agree. On the manual's own Appendix B worked example
+Royston returns 0.9601 against a printed 0.959, and the difference is entirely
+accounted for by the manual centring its observations with concentration means
+rounded to three decimal places; applying the same rounding gives 0.9594.
+
+```{r}
+#| label: shapiro
+epa_normality(fathead_b1, response = "weight")
+```
+
+Royston's algorithm is preferred because it is not limited to the tabulated
+sample sizes, it returns a p-value rather than a decision at one fixed cutoff,
+and it avoids reproducing a third-party table. The manual's tabulated route is
+a hand-calculation aid from before this was available in software.
+
+**Residual risk.** In a borderline case the two could send an analysis down
+different branches of the flowchart. The package reports both the statistic and
+the p-value so that such a case is visible.
+
+### 4. Three printed statistics are not reproducible from the manual's own data
+
+The manuals were prepared for hand calculation, and several worked examples
+carry intermediate values forward after rounding them. Recomputing at full
+precision therefore does not always return the printed figure. In every case
+found so far the conclusion is unchanged, but the numbers differ, and anyone
+checking this package against the manual needs to know which is which.
+
+#### Bartlett's test: 7.691 against 6.836
+
+The Appendix B example prints `B = 7.691`. From the raw data the statistic is
+6.836. The manual computed it from its own printed table of variances rounded
+to four decimal places, and then divided by a correction factor also rounded,
+to 1.133.
+
+```{r}
+#| label: bartlett
+epa_variance(fathead_b1, response = "weight")$statistic
+
+# reproducing the printed value from the manual's rounded intermediates
+printed <- c(0.0018, 0.0020, 0.0001, 0.0059, 0.0037)
+nu <- rep(3, 5)
+(sum(nu) * log(sum(nu * printed) / sum(nu)) - sum(nu * log(printed))) / 1.133
+```
+
+One of those rounded variances is itself wrong: the variance at 32 µg/L is
+0.002055, which the manual prints as 0.0020 rather than 0.0021. Bartlett's
+statistic depends on the logarithm of each variance, so a small relative error
+in the smallest variance moves it appreciably.
+
+**Decision.** Compute from the unrounded data. Both values are far below the
+13.277 critical value.
+
+#### Kolmogorov D: 0.4684 against 0.4572
+
+The Appendix B example prints `D* = 0.4684`. At full precision it is 0.4572.
+The manual standardises each residual and then looks the probability up in a
+printed normal table, which requires rounding each `z` to two decimal places
+first. Doing the same reproduces the printed value:
+
+```{r}
+#| label: kolmogorov
+epa_normality(ceriodaphnia_b7, response = "young")$statistic
+
+residuals <- ceriodaphnia_b7$young -
+  ave(ceriodaphnia_b7$young, ceriodaphnia_b7$conc,
+      FUN = function(z) round(mean(z), 1))
+n <- length(residuals)
+p <- pnorm(round(sort(residuals) / sd(residuals), 2))
+d <- max(max(seq_len(n) / n - p), max(p - (seq_len(n) - 1) / n))
+d * (sqrt(n) - 0.01 + 0.85 / sqrt(n))
+```
+
+**Decision.** Compute at full precision. Both values are far below the 1.035
+critical value.
+
+#### Appendix C section 1.11: 0.087 against 0.162
+
+The same section that computes `MSD = 0.162` then describes the minimum
+detectable difference as 0.087 mg, "a decrease in growth of 24 % from the
+control". The control mean is 0.677, and 24 % of it is 0.162, so 0.162 is
+correct and 0.087 is a typographical error.
+
+```{r}
+#| label: msd
+pmsd(fathead_c1, response = "weight", bounds = "fathead_growth")
+```
+
+### 5. Appendix C does not use the data it says it does
+
+Appendix C states that its data are "the same data used in Appendices B and
+D". Table C.1 differs from Table B.1 at fifteen of twenty values. The two are
+shipped as separate datasets, `fathead_b1` and `fathead_c1`, and each is
+checked against the summary statistics printed beside it.
+
+```{r}
+#| label: datasets
+rbind(
+  `Table B.1` = tapply(fathead_b1$weight, fathead_b1$conc, mean),
+  `Table C.1` = tapply(fathead_c1$weight, fathead_c1$conc, mean)
+)
+```
+
+Using the wrong one is not a small matter: Table B.1 gives a control mean of
+0.714 and a within mean square root of 0.052, against 0.677 and 0.097 for Table
+C.1, and the two lead to different no-observed-effect concentrations.
+
+### 6. Smoothing is full pool-adjacent-violators, not pairwise averaging
+
+**Decision.** `smooth_monotone()` implements the pool-adjacent-violators
+algorithm, with block sizes tracked so that a run of several values pools to
+their common mean in one step.
+
+**Reasoning.** The manuals describe smoothing as averaging a violating *pair*.
+Taken literally that is wrong, because their own worked examples pool longer
+runs: the Appendix K mortality proportions collapse from five values to a
+single 0.02, which repeated pairwise averaging does not produce. The manuals
+acknowledge this obliquely, noting that "unusual patterns in the deviations
+from monotonicity may require an additional step of smoothing".
+
+```{r}
+#| label: smoothing
+smooth_monotone(c(0.05, 0.00, 0.05, 0.00, 0.00), direction = "increasing")
+```
+
+Weights are exposed because the two places the manuals use smoothing need
+different ones. The linear interpolation method smooths concentration means
+with equal weight, whereas the isotonic means of Williams' test are weighted by
+replication.
+
+### 7. The arc sine transformation includes its endpoint adjustments
+
+**Decision.** `arcsine_sqrt()` substitutes `1 / (4 * n)` for an observed proportion
+of 0 and `1 - 1 / (4 * n)` for a proportion of 1, where `n` is the number of
+organisms in the replicate, and requires `n` whenever either occurs.
+
+**Reasoning.** These adjustments are part of the method, not a refinement. A
+replicate at 0 or 1 would otherwise contribute no variance and the tests
+downstream would understate the true variability. They reproduce the manual's
+printed values exactly:
+
+```{r}
+#| label: arcsine
+c(
+  `RP = 0.60` = arcsine_sqrt(0.60),   # manual prints 0.8861
+  `RP = 0`    = arcsine_sqrt(0, n = 20),  # manual prints 0.1120
+  `RP = 1`    = arcsine_sqrt(1, n = 20)   # manual prints 1.4588
+)
+```
+
+### 8. Williams' test is an extension, not an EPA method
+
+**Decision.** Williams' test will be implemented, because ToxCalc offered it,
+but it is documented as an extension and is not on the flowchart the package
+walks by default.
+
+**Reasoning.** The manuals do not include Williams' test in the
+hypothesis-testing flowchart of Figure 2. Section 9.4.1.2 mentions it only as
+an alternative requiring additional assumptions, principally that the
+concentration-response relationship is monotone. Presenting it as an EPA method
+would misrepresent the manuals.
+
+### 9. Two significance levels, not one
+
+**Decision.** The package carries `alpha_assumption`, defaulting to 0.01, and
+`alpha`, defaulting to 0.05.
+
+**Reasoning.** Section 9.4.6.1 sets the assumption tests at 0.01 and the
+hypothesis tests at 0.05, one-sided. A single significance level argument would
+be wrong for one or the other.
+
+### 10. Dependencies are kept to what is genuinely needed
+
+**Decision.** At runtime the package depends on `chk` and base `stats` only.
+`MASS`, `multcomp`, `mvtnorm`, `nortest` and `boot` appear in `Suggests`, where
+they are used in the test suite as independent checks on methods implemented
+here from first principles.
+
+**Reasoning.** Each was considered and rejected as a runtime dependency.
+`mvtnorm` was displaced by the integration in decision 2. `multcomp` would have
+been used for one quantile while pulling in four further packages. `nortest`
+provides statistics the manuals do not specify. `MASS::dose.p` supplies a
+median lethal concentration but none of the Abbott adjustment, heterogeneity
+test or Fieller limits the manuals also require. `boot` cannot express the EPA
+bootstrap, which resamples within concentration, re-smooths inside every
+iteration, and takes an order-statistic interval.
+
+`PMCMRplus`, the usual source for Williams' and Steel's tests, is not used: it
+requires the external MPFR and GMP libraries, which makes it impractical to
+install on Windows.
+
+## Still open
+
+These are recorded rather than resolved, and will be settled against the
+published worked examples when the phases that need them are implemented.
+
+- **The trimmed Spearman-Karber confidence interval.** Neither the multiplier
+  (1.96 or 2) nor the variance denominator (`n_i` or `n_i - 1`) is stated. The
+  two published examples have enough precision to determine both.
+- **The probit interval.** Whether proportions are Abbott-adjusted before
+  fitting or a natural-response parameter is fitted, whether limits are
+  Fieller's or the delta method, and whether a heterogeneity factor is applied,
+  are all unstated and interact.
+- **The expanded interval for fewer than seven replicates**, which is defined
+  only in the ICPIN v2.0 program documentation and is not publicly retrievable.
+  The current intention is to omit it and report the ordinary interval with a
+  note.
+- **Non-monotone patterns of significance.** Section 9.6.5.1 advises caution
+  where a lower concentration is not significant between two that are, but
+  prescribes no rule.
+
+## Checking this package against the manuals
+
+Every claim above is a test. To run them:
+
+```r
+devtools::test()
+```
+
+The datasets are rebuilt by `data-raw/DATASET.R`, which re-checks each
+transcription against the summary statistics printed beside it in the manual
+and fails if any value has drifted.

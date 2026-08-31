@@ -67,12 +67,24 @@ labelled as an extension in its documentation (specification §2.1, §6.3).
 earlier decision. The EPA manuals are US Government works, but several tables
 *inside* them are reproduced from other sources under a permission that does not
 transfer to us: Williams' critical values from *Biometrics*, Dunnett's from
-Miller (1981), and Conover's Shapiro-Wilk coefficients. Critical values will be
-computed instead — exactly, using `mvtnorm` for Dunnett, and by simulation for
-Williams. This is also more accurate: computation handles unbalanced designs
-that the published tables never covered, and the Dunnett table reproduced in the
-EPA PDF is visibly corrupted by optical character recognition
+Miller (1981), and Conover's Shapiro-Wilk coefficients. Critical values are
+computed instead. This is also more accurate: computation handles unbalanced
+designs that the published tables never covered, and the Dunnett table
+reproduced in the EPA PDF is visibly corrupted by optical character recognition
 (specification §3).
+
+Dunnett's critical value turned out to need care. The obvious tool,
+`mvtnorm::qmvt()`, is a randomised method and returns a slightly different
+answer every time it is called — between 2.3552 and 2.3585 on the example we
+validate against. An analysis that goes to a regulator has to give the same
+number every time, so the value is obtained by ordinary numerical integration
+instead, which is exact and repeatable. `mvtnorm` is consequently not a
+dependency.
+
+**A note on where decisions are recorded.** Decisions taken during
+implementation, and the evidence for each, are written up in the package
+vignette `vignettes/recreating-toxcalc.qmd`, which ships with the package and
+is the document to read when checking this work against the manuals.
 
 **The point-estimation scope is larger than expected.** The EPA chart for the
 LC50 has four terminal methods, not two. As well as probit analysis and the
@@ -105,12 +117,12 @@ summary(result)
 Nine phases. Each is separately testable, separately committable, and useful on
 its own. Full definitions of done are in specification §9.
 
-**Phase 0 — scaffold.** *Purpose:* a package that builds and checks cleanly
+**Phase 0 — scaffold. Complete.** *Purpose:* a package that builds and checks cleanly
 before any statistics are added, so later phases never debug the build and the
 analysis at the same time. *Done:* `R CMD check` reports zero errors, warnings
 and notes. **Complete.**
 
-**Phase 1 — data handling and primitives.** *Purpose:* the input contract, plus
+**Phase 1 — data handling and primitives. Complete.** *Purpose:* the input contract, plus
 the two transformations everything else depends on — the EPA arc sine square
 root transformation and monotone smoothing. *Why it is needed:* the EPA arcsine
 has a specific adjustment when an observed proportion is exactly 0 or exactly 1,
@@ -118,7 +130,7 @@ and the smoothing step is shared by three later methods. Neither exists in any
 CRAN package, so this phase is useful even alone. *Done:* reproduces four
 worked transformations printed in the manuals.
 
-**Phase 2 — assumption tests and sensitivity.** *Purpose:* the normality and
+**Phase 2 — assumption tests and sensitivity. Complete.** *Purpose:* the normality and
 equal-variance tests that decide which branch of the chart is taken, and the MSD
 and PMSD that describe how sensitive the test was. *Done:* reproduces the
 manuals' printed statistics for both, and the Appendix C minimum significant
