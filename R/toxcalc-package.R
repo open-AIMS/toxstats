@@ -2,8 +2,7 @@
 "_PACKAGE"
 
 ## usethis namespace: start
-#' @importFrom stats aov bartlett.test complete.cases df.residual fligner.test
-#'   pt qt quantile sd shapiro.test var
+#' @importFrom stats ave sd var
 ## usethis namespace: end
 
 ## mockable bindings: start

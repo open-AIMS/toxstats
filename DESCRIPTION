@@ -19,6 +19,7 @@ BugReports: https://github.com/beckyfisher/toxcalc/issues
 Depends:
     R (>= 4.1)
 Imports:
+    chk (>= 0.10.0),
     stats
 Suggests:
     boot,
