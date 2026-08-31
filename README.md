@@ -81,10 +81,31 @@ Flowchart: EPA-821-R-02-013 Figure 2
 Both of the manual's multi-concentration worked examples run end to end and the
 flowchart independently selects the same test the manual selects: Dunnett's
 procedure for the Appendix C growth data, and Steel's Many-One Rank Test for
-the Appendix E reproduction data. `R CMD check` is clean at every phase.
+the Appendix E reproduction data.
 
-Still to come: the point-estimation methods for the LC50 and ICp, and Williams'
-test.
+The point-estimation branch is complete too. `lc50()` walks the Figure 6 chart
+and selects between the graphical, Spearman-Karber, trimmed Spearman-Karber and
+probit methods. Each of the four columns of the acute manual's Table 20 was
+constructed to exercise one of those methods, and each routes to the right one
+and reproduces the published estimate:
+
+| Column | Method selected | Estimate | Manual |
+|---|---|---|---|
+| `graphical` | Graphical | 35.36 | 35 (read off a plot) |
+| `spearman_karber` | Spearman-Karber | 45.3 (38.9, 52.8) | 45.3 (38.9, 52.8) |
+| `trimmed` | Trimmed Spearman-Karber | 77.11 (69.6, 85.4) | 77.11 (69.74, 85.26) |
+| `probit` | Probit | 22.872 (18.787, 27.846) | 22.872 (18.787, 27.846) |
+
+The trimmed Spearman-Karber interval is the one quantity in the package that
+does not reproduce a published EPA value. The manual delegates it to a program
+whose formula it does not state, and Hamilton's corrected variance expression is
+not publicly retrievable, so the delta method is used instead. The trim itself
+and the point estimate both reproduce exactly. See the vignette.
+
+`R CMD check` is clean at every phase.
+
+Still to come: the inhibition concentration by linear interpolation, and
+Williams' test.
 
 The vignette `vignettes/recreating-toxcalc.qmd` records every point at which the
 source material was ambiguous, internally inconsistent, or at odds with modern

@@ -145,7 +145,7 @@ recreation of what ToxCalc did — selecting a test automatically and recording
 why. *Done:* two complete worked examples run end to end and select the same
 test the manual selects. **This is the first version worth releasing.**
 
-**Phase 5 — point estimation for survival data.** *Purpose:* the LC50 branch,
+**Phase 5 — point estimation for survival data. Complete.** *Purpose:* the LC50 branch,
 with all four EPA methods and the chart that chooses between them. *Done:*
 reproduces five worked examples, including the trimmed Spearman-Karber trims of
 20.51% and 20.41% printed in the two manuals.

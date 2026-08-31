@@ -344,3 +344,25 @@ stopifnot(
 
 usethis::use_data(ceriodaphnia_e1, overwrite = TRUE)
 usethis::use_data(ceriodaphnia_g2, overwrite = TRUE)
+
+# Table 20 of the acute manual -- mortality counts used for the four LC50
+# worked examples. Each method column is a different set of counts, chosen to
+# exercise that method; 20 organisms in the control and at every concentration.
+acute_table20 <- data.frame(
+  conc = c(0, 6.25, 12.5, 25, 50, 100),
+  exposed = rep(20, 6),
+  graphical = c(1, 0, 0, 0, 20, 20),
+  spearman_karber = c(1, 1, 0, 0, 13, 20),
+  trimmed = c(1, 0, 2, 0, 0, 16),
+  probit = c(0, 0, 3, 9, 20, 20)
+)
+
+stopifnot(
+  all(acute_table20$exposed == 20),
+  nrow(acute_table20) == 6,
+  # The probit column has no control mortality, which is why the manual's
+  # output shows the adjusted proportions equal to the observed ones.
+  acute_table20$probit[1] == 0
+)
+
+usethis::use_data(acute_table20, overwrite = TRUE)

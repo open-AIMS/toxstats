@@ -234,3 +234,69 @@ wording is part of what is being delivered.
 R CMD check clean at 0/0/0; 338 assertions passing.
 
 ---
+**User:** yes continue
+
+**Claude:** Implemented Phase 5, the LC50 point-estimation branch: the
+graphical method, Spearman-Karber, trimmed Spearman-Karber with automatic trim,
+probit, and the Figure 6 chart that selects between them. The acute manual
+(EPA-821-R-02-012) was downloaded and its section 11.2 worked examples read
+directly.
+
+**All four columns of Table 20 route to the method they were built for and
+reproduce the published estimate.** Graphical 35.36, where the manual reads 35
+off a plot and the geometric mean of the two bracketing concentrations is
+35.355. Spearman-Karber `m = 1.65652` against a printed 1.656527,
+`V(m) = 0.001098` against 0.0010977, and 45.3 (38.9, 52.8) exactly. Trimmed
+Spearman-Karber trim 20.51 per cent and LC50 77.11, both exact. Probit LC50
+22.872 (18.787, 27.846) and LC1 7.924 (4.147, 10.959), all exact.
+
+**Four ambiguities resolved by testing candidates against the printed output
+rather than by choosing a convention.**
+
+*The probit heterogeneity statistic is Pearson's, not the deviance.* Both are
+chi-square statistics on the same fit and the manual names neither. Pearson
+gives 3.0764 against a printed 3.076; the deviance gives 3.8588.
+
+*The probit limits are Fieller's, not the delta method.* Fieller reproduces the
+printed limits to every digit for both the LC1 and the LC50; the delta method
+gives 19.04 to 27.47 and 5.17 to 12.14, matching neither.
+
+*The Spearman-Karber multiplier is 2.0.* Section 11.2.3.3 step 6 writes it that
+way, which is the manual's rounding of 1.96, and keeping it is what reproduces
+the printed interval. The exact normal quantile is used at other confidence
+levels.
+
+*Partial responses are counted after smoothing and Abbott adjustment.* Figure 6
+branches on how many concentrations show a partial response without saying which
+proportions are meant. The manual's own Spearman-Karber example settles it: the
+raw data show two partial responses, which would route to the probit branch,
+while the smoothed adjusted data show one, which routes to Spearman-Karber, and
+that is the method the manual uses. Counting the raw proportions misroutes that
+example, which is how the ambiguity was found.
+
+**The trimmed Spearman-Karber interval is the one quantity that does not
+reproduce a published EPA value, and this is documented prominently rather than
+buried.** The trim rule was verified exactly against both published trims,
+20.51 per cent in the acute manual and 20.41 per cent in Appendix K of the
+chronic manual, confirming both the definition `max(p1, 1 - pk)` and the
+ordering: smooth, then Abbott-adjust, then trim. The point estimate is exact.
+The interval is not, because the manual delegates it to a program whose formula
+it does not state, and the corrected variance expression of Hamilton et al.
+(1978) is not retrievable from any public source. Three candidates were tested
+against the printed 69.74 to 85.26: the plain Spearman-Karber variance scaled by
+`1/(1-2a)^2` gives 70.8 to 84.0, clearly too narrow; a parametric bootstrap
+gives 68.9 to 86.3, too wide; the delta method applied to the estimator as
+implemented gives 69.6 to 85.4. The delta method was chosen because it is exact
+for the estimator actually implemented rather than adopted on faith, and is the
+closest of the three.
+
+Two implementation details worth recording. The probit model is fitted as
+proportions with the group sizes as weights rather than as a two-column count
+matrix, because the Abbott adjustment makes the implied counts non-integer.
+And two glm warnings are muffled deliberately, the separation warning and the
+non-integer successes warning, both of which fire on almost every EPA design
+and say nothing actionable; separation is recorded on the result instead.
+
+R CMD check clean at 0/0/0; 437 assertions passing.
+
+---

@@ -127,6 +127,10 @@ apply_rule <- function(rule, state) {
     variance = rule_variance(state),
     min_replicates = rule_min_replicates(state),
     balanced = rule_balanced(state),
+    partial_two = rule_partial_two(state),
+    partial_one = rule_partial_one(state),
+    probit_fits = rule_probit_fits(state),
+    sk_requirements = rule_sk_requirements(state),
     chk::abort_chk("Unknown flowchart rule: ", rule, ".")
   )
 }

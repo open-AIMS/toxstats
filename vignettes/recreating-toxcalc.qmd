@@ -410,25 +410,115 @@ c(selected_by_flowchart = fit$selected, actually_run = fit$comparison$test)
 decisions(fit)[decisions(fit)$node == "override", c("outcome", "reference")]
 ```
 
+### 14. The point-estimation methods, settled by evidence
+
+Four of the manual's ambiguities were resolved by testing candidate
+constructions against the printed output rather than by choosing a convention.
+
+**The probit heterogeneity statistic is Pearson's, not the deviance.** Both are
+chi-square statistics on the same fit and the manual names neither. For the
+worked example Pearson gives 3.0764 against a printed 3.076, and the deviance
+gives 3.8588, so the two are distinguishable and the manual is using Pearson.
+
+**The probit limits are Fieller's, not the delta method.** Fieller reproduces
+the manual's printed limits to every digit — 18.787 to 27.846 for the LC50 and
+4.147 to 10.959 for the LC1 — while the delta method gives 19.04 to 27.47 and
+5.17 to 12.14.
+
+```{r}
+#| label: probit
+probit_lc(
+  acute_table20,
+  response = "probit", n_exposed = "exposed", type = "quantal",
+  p = c(1, 50)
+)
+```
+
+**The Spearman-Karber multiplier is 2.0.** Section 11.2.3.3 step 6 writes the
+interval as `m ± 2.0 sqrt(V(m))`. That is the manual's rounding of 1.96, and
+keeping it is what reproduces the printed 38.9 to 52.8. The exact normal
+quantile is used at other confidence levels.
+
+**Partial responses are counted after smoothing and adjustment.** Figure 6
+branches on how many concentrations show a partial response, without saying
+whether that means the raw proportions or the smoothed, adjusted ones. The
+manual's own Spearman-Karber example settles it: the raw data show two partial
+responses, which would route to the probit branch, while the smoothed adjusted
+data show one, which routes to Spearman-Karber, and Spearman-Karber is what the
+manual uses.
+
+```{r}
+#| label: lc50-routing
+for (column in c("graphical", "spearman_karber", "trimmed", "probit")) {
+  fit <- lc50(
+    acute_table20,
+    response = column, n_exposed = "exposed", type = "quantal"
+  )
+  cat(format(column, width = 16), "->", fit$selected, "\n")
+}
+```
+
+### 15. The one place the package does not reproduce the manual
+
+**The trimmed Spearman-Karber confidence interval.**
+
+The trim itself is settled. Section 11.2.4.3 step 4 defines it as
+`max(p1, 1 - pk)` on the smoothed, Abbott-adjusted proportions, and that
+reproduces both published trims exactly: 20.51 per cent in the acute manual and
+20.41 per cent in Appendix K of the chronic manual. The ordering matters —
+smoothing, then the Abbott adjustment, then the trim — and computing it from
+the raw proportions gives a different answer.
+
+The point estimate is settled too: 77.1105 against the 77.11 the manual's
+program prints.
+
+The interval is not. The manual delegates it to a program whose source is not
+available and does not state the formula. Hamilton et al. (1977) published a
+variance expression that Hamilton et al. (1978) then corrected, and no
+retrievable source gives the corrected form.
+
+Three candidates were tested against the printed 69.74 to 85.26. The plain
+Spearman-Karber variance scaled by `1/(1-2a)^2` gives 70.8 to 84.0, which is
+clearly too narrow. A parametric bootstrap gives 68.9 to 86.3, too wide. The
+delta method applied to the estimator as implemented gives 69.6 to 85.4.
+
+**Decision: the delta method.** It is exact for the estimator actually
+implemented rather than adopted on faith, and it is the closest of the three.
+The difference from the manual is in the third significant figure and does not
+affect the point estimate.
+
+```{r}
+#| label: tsk
+trimmed_spearman_karber(
+  acute_table20,
+  response = "trimmed", n_exposed = "exposed", type = "quantal"
+)
+```
+
+This is recorded here rather than buried, because it is the only quantity in
+the package known to differ from a published EPA value for a reason other than
+an error in the manual.
+
 ## Still open
 
-These are recorded rather than resolved, and will be settled against the
-published worked examples when the phases that need them are implemented.
+Two of the four questions raised when this package was planned have since been
+settled by evidence and are described in sections 14 and 15: the probit
+interval, and the trimmed Spearman-Karber interval. These remain.
 
-- **The trimmed Spearman-Karber confidence interval.** Neither the multiplier
-  (1.96 or 2) nor the variance denominator (`n_i` or `n_i - 1`) is stated. The
-  two published examples have enough precision to determine both.
-- **The probit interval.** Whether proportions are Abbott-adjusted before
-  fitting or a natural-response parameter is fitted, whether limits are
-  Fieller's or the delta method, and whether a heterogeneity factor is applied,
-  are all unstated and interact.
-- **The expanded interval for fewer than seven replicates**, which is defined
-  only in the ICPIN v2.0 program documentation and is not publicly retrievable.
-  The current intention is to omit it and report the ordinary interval with a
-  note.
+- **The expanded interval for fewer than seven replicates**, used by the
+  linear-interpolation method. It is defined only in the ICPIN version 2.0
+  program documentation, which is not publicly retrievable. The current
+  intention is to omit it and report the ordinary interval with a note.
 - **Non-monotone patterns of significance.** Section 9.6.5.1 advises caution
   where a lower concentration is not significant between two that are, but
-  prescribes no rule.
+  prescribes no rule. The package reports the pattern as observed, sets the
+  no-observed-effect concentration below the lowest significant one, and flags
+  the result rather than forcing it monotone.
+- **The heterogeneity correction to the probit variance.** The manual's
+  practice of inflating the variance by `chi-square / df` when heterogeneity is
+  significant is implemented, but the worked example does not exercise it — its
+  chi-square is well below the tabular value — so it is unverified against any
+  published output.
 
 ## Checking this package against the manuals
 

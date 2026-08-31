@@ -4,8 +4,9 @@ Implementation specification for `toxcalc`. Written to be implemented from
 directly. The collaborator-facing companion is `notes/TOXCALC-human.md`; every
 decision is stated in full **here** and only summarised there.
 
-Status: Phases 0 to 4 complete. The package now runs a complete EPA
-hypothesis-testing analysis end to end. Phases 5-9 specified below. Decisions
+Status: Phases 0 to 5 complete. The package now runs a complete EPA
+hypothesis-testing analysis and a complete LC50 point estimation end to end.
+Phases 6-9 specified below. Decisions
 taken
 since this document was first written are recorded in the package vignette
 `vignettes/recreating-toxcalc.qmd`, which is the collaborator-facing record.
@@ -631,7 +632,7 @@ them; the same reasoning appears, less densely, in
 | **2** | `epa_normality()` (pooled centred within-group residuals; Royston, Kolmogorov D above n = 50 with Table B.11); `epa_variance()` (Bartlett, plus Levene and Fligner flagged non-EPA); `msd()`, `pmsd()`; deterministic Dunnett critical value in `R/critical.R`; the three EPA datasets and `epa_pmsd_bounds` | **DONE.** App B `W = 0.9601` vs printed 0.959; Bartlett 6.836 with the printed 7.691 reconciled; Kolmogorov `D* = 0.4572` with the printed 0.4684 reconciled; App C `Sw = 0.0971`, `t = 1.486, 0.248, 1.635, 3.248`, `d = 2.3561` vs tabled 2.36, `MSD = 0.1619`, `PMSD = 23.9%`. 175 assertions. |
 | **3** | `dunnett()`, `bonferroni_t()`, `dunn_sidak_t()`, `welch_t()`, `steel()`, `wilcoxon_rank_sum()`, `fisher_exact()`, sharing the `toxcalc_comparison` class and the NOEC/LOEC derivation | **DONE.** App C: `t = 1.486, 0.248, 1.635, 3.248`, critical 2.3561, NOEC 128, LOEC 256. App D: `t = 1.622, 0.270, 1.785, 4.028`, critical 2.510, NOEC 128, LOEC 256. App E: rank sums 84, 63.5, 76, 55, NOEC 3, LOEC 6. App F: rank sums 79, 57, 58, 55, NOEC 3, LOEC 6. App G: NOEC 12, LOEC 25. 254 assertions. |
 | **4** | `walk_flowchart()`, chart data, `decisions()`, `toxcalc()`, print/summary/as.data.frame with snapshot tests, exclusion rules (9.5.2), lower-PMSD override (10.2.8.2.5), override warning, a `@no_valid_test` terminal | **DONE.** App C end to end: normal (W = 0.951, p = 0.378), homogeneous (B = 7.856, p = 0.097), balanced, so the chart selects Dunnett and returns NOEC 128, LOEC 256, MSD 0.162, PMSD 23.9% within the Table 6 bounds. App E end to end with the 50% concentration excluded: normality fails (W = 0.928, p = 0.0047), 10 replicates, balanced, so the chart selects Steel and returns NOEC 3, LOEC 6. Both match the manual's own test selection and endpoints. 338 assertions. **First releasable version.** |
-| **5** | `graphical_lc50()`, `spearman_karber()`, `trimmed_spearman_karber()`, `probit_lc()`, and the Fig. 6 chart | Acute Table 20: Graphical 35%; SK `m = 1.656527`, `V(m) = 0.0010977`, LC50 45.3% (38.9, 52.8); TSK trim 20.51%, LC50 77.11 (69.74, 85.26); App K trim 20.41%, LC50 77.28; Probit chi-sq 3.076, LC50 22.872 (18.787, 27.846), LC1 7.924 (4.147, 10.959) |
+| **5** | `graphical_lc50()`, `spearman_karber()`, `trimmed_spearman_karber()`, `probit_lc()`, the Figure 6 chart and the `lc50()` driver | **DONE.** All four Table 20 columns route to the method they were built for and reproduce the published estimate. Graphical 35.36 (manual reads 35 off the plot); SK `m = 1.65652`, `V = 0.001098`, 45.3 (38.9, 52.8) exactly; TSK trim 20.51% and 20.41% on the two published examples, LC50 77.11 exactly; probit Pearson chi-square 3.076, LC50 22.872 (18.787, 27.846) and LC1 7.924 (4.147, 10.959) exactly. 437 assertions. |
 | **6** | `icp()` with in-loop re-smoothing and the EPA order-statistic interval | App M `IC25 = 8.57%`, `IC50 = 10.89%`; reproducible under a seed; NA-replicate accounting reported |
 | **7** | `williams_test()` with simulated critical values and a monotonicity precondition | Reproduces Williams (1971) published examples; documented as a ToxCalc feature and non-EPA extension |
 | **8** | Top-level driver wiring both branches, `as.data.frame()`, README, pkgdown reference grouped by flowchart branch | Every worked example in both manuals runs through the single driver |
