@@ -4,9 +4,10 @@ Implementation specification for `toxcalc`. Written to be implemented from
 directly. The collaborator-facing companion is `notes/TOXCALC-human.md`; every
 decision is stated in full **here** and only summarised there.
 
-Status: Phases 0 to 6 complete. The package now runs a complete EPA
+Status: Phases 0 to 7 complete. The package now runs a complete EPA
 hypothesis-testing analysis, LC50 point estimation and ICp estimation end to
-end. Only Williams's test and the Phase 9 extensions remain.
+end, and implements Williams' test as a labelled extension. Only the Phase 9
+items remain.
 Decisions
 taken
 since this document was first written are recorded in the package vignette
@@ -635,7 +636,7 @@ them; the same reasoning appears, less densely, in
 | **4** | `walk_flowchart()`, chart data, `decisions()`, `toxcalc()`, print/summary/as.data.frame with snapshot tests, exclusion rules (9.5.2), lower-PMSD override (10.2.8.2.5), override warning, a `@no_valid_test` terminal | **DONE.** App C end to end: normal (W = 0.951, p = 0.378), homogeneous (B = 7.856, p = 0.097), balanced, so the chart selects Dunnett and returns NOEC 128, LOEC 256, MSD 0.162, PMSD 23.9% within the Table 6 bounds. App E end to end with the 50% concentration excluded: normality fails (W = 0.928, p = 0.0047), 10 replicates, balanced, so the chart selects Steel and returns NOEC 3, LOEC 6. Both match the manual's own test selection and endpoints. 338 assertions. **First releasable version.** |
 | **5** | `graphical_lc50()`, `spearman_karber()`, `trimmed_spearman_karber()`, `probit_lc()`, the Figure 6 chart and the `lc50()` driver | **DONE.** All four Table 20 columns route to the method they were built for and reproduce the published estimate. Graphical 35.36 (manual reads 35 off the plot); SK `m = 1.65652`, `V = 0.001098`, 45.3 (38.9, 52.8) exactly; TSK trim 20.51% and 20.41% on the two published examples, LC50 77.11 exactly; probit Pearson chi-square 3.076, LC50 22.872 (18.787, 27.846) and LC1 7.924 (4.147, 10.959) exactly. 437 assertions. |
 | **6** | `icp()` with in-loop re-smoothing and the EPA order-statistic interval | **DONE.** App M smoothed means 28.75, 28.75, 28.75, 28.75, 9.4, 0 exactly; `IC25 = 8.5715` and `IC50 = 10.893` exactly; ICPIN's printed standard deviations reproduced. The interval cannot be matched: ICPIN's own output names the seed (-641671986) it drew 80 resamples with. Reproducible under a seed; undefined-resample accounting reported. **Correction to the original spec:** omitting the in-loop re-smoothing does not narrow the interval as predicted, it *biases* it, giving a bootstrap mean of 10.4 against a point estimate of 8.57. 474 assertions. |
-| **7** | `williams_test()` with simulated critical values and a monotonicity precondition | Reproduces Williams (1971) published examples; documented as a ToxCalc feature and non-EPA extension |
+| **7** | `williams()` with simulated critical values, the isotonic step, the step-down procedure and a monotonicity precondition | **DONE.** No EPA worked example and no retrievable table exist, so validation is by identity: with one concentration there is no order restriction and the simulated critical value must equal `qt(1-alpha, nu)`, which it does at every df tested. Critical values rise with position and sit below Dunnett's (1.76, 1.83, 1.88, 1.87 against 2.356 on the App C design). Seeded by default and restores the caller's RNG stream. Never selected by either flowchart; reaching it always warns. 514 assertions. |
 | **8** | Top-level driver wiring both branches, `as.data.frame()`, README, pkgdown reference grouped by flowchart branch | Every worked example in both manuals runs through the single driver |
 | **9** | Shirley-Williams, Dunn-Sidak, Welch many-one, Jonckheere-Terpstra monotonicity report, marine manual endpoints, multiple controls | — |
 

@@ -351,3 +351,59 @@ omission being silent.
 R CMD check clean at 0/0/0; 474 assertions passing.
 
 ---
+**User:** Yes continue
+
+**Claude:** Implemented Phase 7, `williams()`. This is the one ToxCalc feature
+that is not an EPA method, and the hardest to validate: neither manual gives a
+worked example, a critical value table, or a place for it on any flowchart, and
+Williams' own tables in *Biometrics* are not retrievable.
+
+**It is labelled as an extension everywhere.** Section 9.4.1.2 of the chronic
+manual mentions the test only as an alternative that "requires additional
+assumptions". The method string, the reference string, and the flowchart
+behaviour all say so: neither `toxcalc()` nor `lc50()` will ever select it, and
+forcing it always counts as an override and always warns.
+
+**Critical values are simulated, not tabulated,** per the copyright decision
+taken in Phase 2. That also removes the two errors the tables invite: the
+critical value depends on the *position* of the concentration being tested,
+not on the total number of concentrations, which is the commonest
+implementation error; and the tables require interpolation in `1/nu` rather
+than `nu`. One simulation serves every position, using common random numbers,
+which is faster and keeps the critical values coherent in `i` rather than
+slightly non-monotone through Monte Carlo noise. The simulation is seeded by
+default so a given design always returns the same value, and it restores the
+caller's random number stream on exit so that a user's own analysis cannot be
+shifted by having called it.
+
+**Validation without a reference.** With nothing published to compare against,
+the implementation is pinned by three mathematical facts rather than by
+assertion. With one concentration there is no order restriction, so the
+statistic is an ordinary one-sided t and the simulated critical value must equal
+`qt(1 - alpha, nu)`; it does at every degrees of freedom tested. Beyond one
+concentration the critical value must rise with position, and must sit below
+Dunnett's for the same design, because the order restriction is information
+Dunnett's procedure does not use. On the Appendix C design the values run 1.76,
+1.83, 1.88 and 1.87 against Dunnett's 2.356. The isotonic step and the
+step-down procedure are tested directly.
+
+Two behaviours worth recording. The isotonic step absorbs departures from
+monotonicity, which on the Appendix C data means the means at 32 and 64 are
+replaced by their average; the package warns when that happens, because the
+assumption that justifies using the test at all should not be absorbed
+silently. And the step-down means concentrations below the first
+non-significant one are never tested, which the result records in a `tested`
+column so the distinction between "tested and not significant" and "not tested"
+is visible rather than implied.
+
+A p-value is reported from the simulated null distribution, which is more
+informative than reporting only which side of the critical value the statistic
+fell.
+
+One test expectation of mine was wrong on the first run: I asserted that the
+weighted isotonic estimate of `c(4, 10)` with weights `c(1, 3)` was 5.5 when it
+is 8.5. The implementation was right and the test was wrong.
+
+R CMD check clean at 0/0/0; 514 assertions passing.
+
+---

@@ -154,7 +154,7 @@ reproduces five worked examples, including the trimmed Spearman-Karber trims of
 endpoints, with bootstrap confidence limits. *Done:* reproduces the Appendix M
 IC25 of 8.57% and IC50 of 10.89%.
 
-**Phase 7 — Williams' test.** *Purpose:* the ToxCalc feature that is not an EPA
+**Phase 7 — Williams' test. Complete.** *Purpose:* the ToxCalc feature that is not an EPA
 method, kept separate so its status is unambiguous. *Done:* reproduces Williams'
 own published examples.
 

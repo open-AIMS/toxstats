@@ -95,7 +95,9 @@ toxcalc <- function(
   chk::chk_null_or(test, vld = chk::vld_string)
   chk::chk_null_or(exclude, vld = chk::vld_numeric)
   if (!is.null(test)) {
-    chk::chk_subset(test, unname(flowchart_terminals()))
+    # Williams' test is not a flowchart terminal, but it can be forced, which
+    # is how ToxCalc's one non-EPA test is reached through the driver.
+    chk::chk_subset(test, c(unname(flowchart_terminals()), "williams"))
   }
 
   x <- as_toxcalc_data(x, ...)

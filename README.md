@@ -107,10 +107,16 @@ linear interpolation with bootstrap limits. It reproduces the Appendix M
 example exactly: smoothed means of 28.75 across the control and the three
 lowest concentrations, `IC25 = 8.5715` and `IC50 = 10.893`.
 
+`williams()` implements the one ToxCalc feature that is not an EPA method.
+Neither manual gives a worked example or a table of critical values for it, so
+the values are simulated and the implementation is validated against
+mathematical identities instead. It is labelled as an extension throughout, and
+neither flowchart will ever select it.
+
 `R CMD check` is clean at every phase.
 
-Still to come: Williams' test, which is the ToxCalc feature that is not an EPA
-method.
+Still to come: the marine manual's endpoints, designs with more than one
+control, and the remaining alternative tests.
 
 The vignette `vignettes/recreating-toxcalc.qmd` records every point at which the
 source material was ambiguous, internally inconsistent, or at odds with modern
