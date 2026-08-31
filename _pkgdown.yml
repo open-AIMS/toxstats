@@ -1,0 +1,6 @@
+url: https://beckyfisher.github.io/toxcalc/
+template:
+  bootstrap: 5
+
+development:
+  mode: auto

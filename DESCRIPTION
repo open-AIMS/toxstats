@@ -1,0 +1,36 @@
+Package: toxcalc
+Title: US EPA Whole Effluent Toxicity Statistical Methods
+Version: 0.0.0.9000
+Authors@R:
+    person("Rebecca", "Fisher", , "r.fisher@aims.gov.au", role = c("aut", "cre"))
+Description: An open-source implementation of the statistical methods
+    specified in the US Environmental Protection Agency Whole Effluent
+    Toxicity (WET) method manuals, recreating the capability of the
+    discontinued ToxCalc software. Provides the EPA hypothesis-testing
+    flowchart for deriving no-observed-effect and lowest-observed-effect
+    concentrations, together with the minimum significant difference, and
+    the point-estimation flowchart for median lethal concentrations and
+    inhibition concentrations. Every analysis carries an audit trail
+    recording which test was selected and which manual section justifies
+    the choice.
+License: GPL (>= 2)
+URL: https://github.com/beckyfisher/toxcalc
+BugReports: https://github.com/beckyfisher/toxcalc/issues
+Depends:
+    R (>= 4.1)
+Imports:
+    stats
+Suggests:
+    boot,
+    covr,
+    knitr,
+    MASS,
+    multcomp,
+    nortest,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    withr
+Config/roxygen2/version: 8.0.0.9000
+Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
