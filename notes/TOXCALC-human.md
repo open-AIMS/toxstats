@@ -162,46 +162,86 @@ own published examples.
 that runs either branch, plus the README and website. *Done:* every worked
 example in both manuals runs through the single driver.
 
-**Phase 9 — extensions.** The marine manual's endpoints, multiple controls, and
-the remaining alternative tests.
+**Phase 9 — extensions. Not started, and not needed.** Phases 0 to 8 leave a
+package that does the job. Everything below is a self-contained addition, and
+none depends on another. Specification §11 sets out each one with its scope,
+its effort and how you would know it was finished. In the order I would do
+them:
 
-## What we will need to decide
+1. **The acute manual's single-concentration chart.** A second
+   hypothesis-testing chart, for a test at one concentration against a control,
+   returning Pass or Fail rather than a NOEC. Three of its four terminals
+   already exist, so this is the smallest piece of real work remaining.
+2. **The marine and estuarine manual.** Mostly reading. Its charts are believed
+   to match the freshwater ones; its endpoints do not all have the same
+   replicate structure. That manual has not been downloaded.
+3. **Designs with more than one control.** The marine manual uses brine and
+   solvent controls. This is not an implementation detail: what a second
+   control *means* for the comparison has to be read from the manual, not
+   chosen.
+4. **A formal monotonicity test** to accompany the warning Williams' test
+   already gives. Small; the dependency is already present.
+5. **Shirley-Williams.** Neither ToxCalc nor the manuals include it, so there
+   is no reason from the brief to add it at all. Recorded only because the
+   original design listed it.
 
-Nine points in the manuals are ambiguous enough that guessing would be wrong.
-They are listed in full in specification §8. Four matter early.
+The 2010 Test of Significant Toxicity is **deliberately out of scope**: it
+post-dates ToxCalc, so adding it would be a different project rather than a
+continuation of this one.
 
-**Which Shapiro-Wilk.** EPA specifies a tabled version with a fixed 0.01 cutoff;
-R uses a different approximation that returns a p-value. They agree on the
-statistic to about three decimal places, but in a borderline case they could
-send the analysis down different branches. The proposal is to use R's version by
-default, offer EPA's, and report both.
+## What had to be decided, and what still does
 
-**How the trimmed Spearman-Karber interval is formed.** The manual does not
-state whether the multiplier is 1.96 or 2, nor whether the variance divides by
-the number of organisms or one less. The plan is to determine this empirically
-from the two published examples. If no combination reproduces both, we stop and
-ask rather than choosing the closer one.
+Nine points in the manuals were ambiguous enough that guessing would have been
+wrong. Six have since been settled by testing candidate answers against the
+manuals' own printed output. Each is written up with its evidence in the
+package vignette, `vignettes/recreating-toxcalc.qmd`, which is the document to
+read when checking this work.
 
-**How the probit interval is formed.** Three linked choices are unstated. Same
-approach: find the combination that reproduces the printed output exactly, and
-if more than one does, ask.
+**Settled.** R's Shapiro-Wilk is used, because it reproduces the manual's
+printed statistic. Dunnett's critical value is computed by integration rather
+than taken from `mvtnorm`, because `mvtnorm` is randomised and gives a slightly
+different answer every call. The probit heterogeneity statistic is Pearson's,
+not the deviance, and its limits are Fieller's, not the delta method — in both
+cases because that is what reproduces the printed output and the alternative
+does not. The Spearman-Karber interval uses the manual's own multiplier of 2.0.
+Partial responses are counted after smoothing and adjustment, because counting
+the raw ones sends the manual's own example to the wrong method.
 
-**What to do with a non-monotone pattern of significance.** If a middle
-concentration is not significant between two that are, the manual advises
-caution but gives no rule. The proposal is to report the pattern as observed,
-set the NOEC below the lowest significant concentration, and record a warning in
-the audit trail.
+**Still open.** Three, none of which blocks anything.
+
+The **expanded confidence interval** the linear-interpolation method reports
+when there are fewer than seven replicates is defined only in program
+documentation that is not publicly retrievable. It is omitted, and a design
+that would have triggered it warns.
+
+A **non-monotone pattern of significance** — a middle concentration not
+significant between two that are — draws advice to use caution from the manual
+but no rule. The pattern is reported as observed, the NOEC set below the lowest
+significant concentration, and the result flagged.
+
+The **heterogeneity correction to the probit variance** is implemented as the
+manual describes, but the manual's own example does not exercise it, so it is
+unverified against any published output.
+
+One further quantity, the **trimmed Spearman-Karber confidence interval**,
+could not be settled: the manual delegates it to a program whose formula it
+never states. The delta method is used and the departure is documented. The
+trim and the point estimate both reproduce exactly.
 
 ## Dependencies
 
-Four packages at runtime: `chk` for argument checking, `kSamples` for Steel's
-test, `mvtnorm` for Dunnett critical values, and base `stats`.
+Three packages at runtime: `chk` for argument checking, `kSamples` for Steel's
+test, and base `stats`.
 
-Four more are used only in the test suite, as independent checks on methods
-implemented here from first principles: `MASS`, `multcomp`, `nortest` and
-`boot`. Keeping them out of the runtime list means a user installs four
-packages, not eight, and it forces each method to be implemented rather than
-delegated. The reasoning for each is in specification §7.
+Five more are used only in the test suite, as independent checks on methods
+implemented here from first principles: `MASS`, `multcomp`, `mvtnorm`,
+`nortest` and `boot`. Keeping them out of the runtime list means a user
+installs three packages, not eight, and it forces each method to be implemented
+rather than delegated. The reasoning for each is in specification §7.
+
+`mvtnorm` was originally going to supply Dunnett's critical value and is in the
+suggested list rather than the required one for the reason given above: it is
+randomised, and the value is computed by integration instead.
 
 `PMCMRplus`, which would otherwise be the obvious source for Williams' test, is
 not used. It is not installed here and needs external MPFR and GMP libraries,

@@ -4,15 +4,16 @@ Implementation specification for `toxcalc`. Written to be implemented from
 directly. The collaborator-facing companion is `notes/TOXCALC-human.md`; every
 decision is stated in full **here** and only summarised there.
 
-Status: Phases 0 to 8 complete. The package now runs a complete EPA
-hypothesis-testing analysis, LC50 point estimation and ICp estimation end to
-end, and implements Williams' test as a labelled extension. Only the Phase 9
-items remain: the marine manual endpoints, multiple controls, and the
-remaining alternative tests.
-Decisions
-taken
-since this document was first written are recorded in the package vignette
-`vignettes/recreating-toxcalc.qmd`, which is the collaborator-facing record.
+Status: Phases 0 to 8 complete; the package is usable and nothing outstanding
+blocks its use. Phase 9 is optional and is set out item by item in §11.
+
+The package runs a complete EPA hypothesis-testing analysis, LC50 point
+estimation and ICp estimation end to end, and implements Williams' test as a
+labelled extension.
+
+Decisions taken since this document was first written are recorded in the
+package vignette `vignettes/recreating-toxcalc.qmd`, which is the
+collaborator-facing record.
 
 ---
 
@@ -639,7 +640,7 @@ them; the same reasoning appears, less densely, in
 | **6** | `icp()` with in-loop re-smoothing and the EPA order-statistic interval | **DONE.** App M smoothed means 28.75, 28.75, 28.75, 28.75, 9.4, 0 exactly; `IC25 = 8.5715` and `IC50 = 10.893` exactly; ICPIN's printed standard deviations reproduced. The interval cannot be matched: ICPIN's own output names the seed (-641671986) it drew 80 resamples with. Reproducible under a seed; undefined-resample accounting reported. **Correction to the original spec:** omitting the in-loop re-smoothing does not narrow the interval as predicted, it *biases* it, giving a bootstrap mean of 10.4 against a point estimate of 8.57. 474 assertions. |
 | **7** | `williams()` with simulated critical values, the isotonic step, the step-down procedure and a monotonicity precondition | **DONE.** No EPA worked example and no retrievable table exist, so validation is by identity: with one concentration there is no order restriction and the simulated critical value must equal `qt(1-alpha, nu)`, which it does at every df tested. Critical values rise with position and sit below Dunnett's (1.76, 1.83, 1.88, 1.87 against 2.356 on the App C design). Seeded by default and restores the caller's RNG stream. Never selected by either flowchart; reaching it always warns. 514 assertions. |
 | **8** | `branch = "both"` on `toxcalc()` wiring the point estimate alongside the hypothesis test, long-format `as.data.frame()`, executable `README.Rmd`, pkgdown reference index grouped by flowchart branch | **DONE.** One call returns the NOEC, LOEC, MSD, PMSD and the point estimate, choosing `lc50()` for a quantal endpoint and `icp()` for a continuous one, with the point branch using all the data as section 9.5.2 requires. No `"point"`-only option: `lc50()` and `icp()` already serve that and are easier to find. `pkgdown::check_pkgdown()` clean. 536 assertions. |
-| **9** | Shirley-Williams, Dunn-Sidak, Welch many-one, Jonckheere-Terpstra monotonicity report, marine manual endpoints, multiple controls | — |
+| **9** | Not started, and not needed. The acute single-concentration chart, the marine manual, multiple controls, a formal monotonicity test, Shirley-Williams | Set out item by item with scope, effort and definition of done in **§11**. The 2010 Test of Significant Toxicity is deliberately out of scope. |
 
 ---
 
@@ -662,3 +663,137 @@ them; the same reasoning appears, less densely, in
 - **`PMCMRplus` for Williams and Steel.** Rejected: not installed, and
   impractical to install on Windows (needs MPFR and GMP system libraries).
   `kSamples` covers Steel better; Williams is implemented here.
+
+---
+
+## 11. Phase 9 in detail
+
+Phases 0 to 8 are complete and the package is usable. Nothing below is needed
+for that; each item is a self-contained addition, and they are independent of
+one another. This section exists so that stopping here loses nothing.
+
+They are listed in the order I would do them, which is roughly decreasing
+usefulness per unit of work.
+
+### 11.1 The single-concentration pass/fail chart (acute Figure 12)
+
+*What.* The acute manual has a second hypothesis-testing chart, for a test at
+one effluent concentration against a control. It returns **Pass or Fail**, not
+a NOEC:
+
+```
+arc sine sqrt -> Shapiro-Wilk
+                   fail -> Wilcoxon Rank Sum
+                   pass -> F-test for equal variances
+                             pass -> pooled t-test
+                             fail -> Welch modified t-test
+```
+
+*Why it is first.* Three of the four terminals already exist:
+`wilcoxon_rank_sum()`, `welch_t()`, and the assumption tests. What is missing is
+a pooled two-sample t, an F-test for equal variances, the chart itself, and a
+different return type. The engine takes a new chart without modification, which
+is what it was built for.
+
+*Effort.* Small. One new chart, one new rule (`rule_equal_variances`), a
+`pass_fail` result class, and a driver.
+
+*Definition of done.* The chart is walked, the result reports Pass or Fail with
+the same decision trail as `toxcalc()`, and the acute manual's
+single-concentration worked example reproduces if one exists. **Check whether it
+does before starting** — I have not looked.
+
+### 11.2 The marine and estuarine manual (EPA-821-R-02-014)
+
+*What.* The third manual in the series. Its statistical flowcharts are believed
+to be the same as the freshwater ones, but its endpoints are not.
+
+*The two that differ structurally.* Sea urchin fertilisation is quantal per
+replicate, which the existing data layer handles. *Champia parvula* cystocarp
+counts have a different replicate structure, which it may not; that needs
+checking against the manual before any code is written.
+
+*Effort.* Medium, and mostly reading. The likely outcome is that the existing
+machinery covers it and the work is transcribing worked examples as fixtures.
+
+*Definition of done.* The marine manual's worked examples reproduce, and any
+place where its chart differs from Figure 2 is a separate chart rather than a
+condition inside the existing one.
+
+*Note.* The marine manual has not been downloaded. Phases 1 to 8 used only
+EPA-821-R-02-012 and EPA-821-R-02-013.
+
+### 11.3 Designs with more than one control
+
+*What.* `toxcalc_data(control = )` takes a single value. The marine manual uses
+brine controls, and some methods use both a dilution-water and a solvent
+control.
+
+*The open question, which is not an implementation detail.* What does a second
+control mean for the analysis? Three possibilities, and the manual must be
+consulted rather than a choice made: the two controls are compared with each
+other first and pooled if they do not differ; the solvent control alone is used
+as the comparator; or each concentration is compared with both. These give
+different answers, and guessing would be wrong.
+
+*Effort.* Small once the rule is known; the data layer, the flowchart rules and
+the comparison functions all assume one control index and would each need
+widening.
+
+*Definition of done.* A marine worked example using two controls reproduces,
+and the decision trail records which control rule was applied.
+
+### 11.4 A monotonicity report using Jonckheere-Terpstra
+
+*What.* `monotonicity()` currently reports where a sequence departs from
+monotone. `kSamples::jt.test` is already a dependency and would give a formal
+trend test to accompany it.
+
+*Why it is worth having.* Williams' test assumes monotonicity and currently
+warns on the observed pattern alone. A formal test would make that warning
+quantitative.
+
+*Effort.* Small.
+
+*Definition of done.* The test is reported alongside the existing violation
+positions, and is documented as an aid to judgement rather than an EPA
+requirement, which it is not.
+
+### 11.5 Shirley-Williams
+
+*What.* The non-parametric analogue of Williams' test.
+
+*Why it is last.* ToxCalc did not offer it and neither EPA manual mentions it,
+so unlike Williams' test there is no reason from the recreation brief to
+include it at all. It is recorded only because the original design listed it.
+
+*Effort.* Medium, and it inherits Williams' validation problem: no worked
+example and no retrievable table, so critical values would again have to be
+simulated and pinned by identity.
+
+### 11.6 Explicitly out of scope
+
+**The Test of Significant Toxicity (EPA-833-R-10-003, 2010).** It supersedes
+parts of this framework in NPDES practice, but it post-dates ToxCalc v5.0 and
+so falls outside a recreation of that software. Adding it would be a different
+project, not a continuation of this one. Recorded here so the omission is a
+decision rather than an oversight.
+
+### 11.7 Questions that remain open
+
+These are not work items; they are places where the source material does not
+determine an answer. They are also stated in the package vignette, which is the
+document a user will read.
+
+1. **The ICPIN expanded confidence interval** for fewer than seven replicates.
+   Defined only in the ICPIN version 2.0 program documentation, which is not
+   publicly retrievable. Currently omitted, with a warning when a design would
+   have triggered it.
+2. **Non-monotone patterns of significance.** Section 9.6.5.1 advises caution
+   but prescribes no rule. Currently the pattern is reported as observed, the
+   NOEC set below the lowest significant concentration, and the result flagged.
+3. **The heterogeneity correction to the probit variance.** Implemented as the
+   manual describes, but its worked example does not exercise it, so it is
+   unverified against any published output.
+
+Resolving any of these needs a source none of the searches so far has found.
