@@ -2,6 +2,15 @@
 
 ## toxstats 0.0.0.9000
 
+- Adds an intended-use disclaimer: the package was written with
+  generative AI and is for testing and validation only, and must not be
+  used to derive toxicity estimates for regulatory submission,
+  compliance reporting, or any other official purpose. It appears in
+  `DESCRIPTION`, in
+  [`?toxstats`](https://open-aims.github.io/toxstats/reference/toxstats-package.md),
+  at the top of the README, and as a startup message when the package is
+  attached.
+
 - [`trimmed_spearman_karber()`](https://open-aims.github.io/toxstats/reference/trimmed_spearman_karber.md)
   now reproduces the confidence limits printed in EPA-821-R-02-012 Table
   20 exactly, where it previously differed in the third significant
