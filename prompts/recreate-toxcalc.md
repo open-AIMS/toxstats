@@ -579,3 +579,56 @@ suite passes; `R CMD check --as-cran` reports only the dev-version and
 pandoc-absent notes.
 
 ---
+
+## Session: intended-use disclaimer
+Date: 2026-09-01
+Model: Claude Opus 5 (1M context)
+
+### Prompts and Responses
+
+**User:** can you add a disclaimer that this has been built by generative AI,
+and is for testing and validation purposes only, and should not be used for
+deriving toxicity estimates for any official use?
+
+**Claude:** Added, in both packages. The placement decision is the substantive
+part, so it is recorded here rather than left to the diff.
+
+The disclaimer had to reach the person who reads a *result*, who is not always
+the person who ran it. So it goes on the artefacts that travel: the rendered
+report and the generated R script both carry it in full, the script as a header
+comment, because a script is the thing most likely to be read years later by
+someone who never saw the interface. In the application it is a banner in the
+page header, which renders on every tab; a notice on the landing tab alone
+would be scrolled past before any result existed to misread.
+
+For console use the disclaimer is a startup message rather than a line appended
+to every printed result. A reader of a printed result is nearly always the
+person who ran it, and a message repeated on every print is ignored within a
+day, which would weaken the places where it does matter. `.onAttach()` is
+suppressible in the ordinary way, and a test asserts it still fires.
+
+The text says what the validation does and does not establish, which is the
+part a reader needs in order to judge the restriction rather than merely obey
+it: agreement with a printed worked example shows that one path through one
+method reproduces one published number. It is not independent verification, it
+does not cover the paths no manual exercises, and it is not the review a
+regulator would expect of software producing a submitted result. The package
+documentation also now states plainly that this is not a validated replacement
+for ToxCalc, no ToxCalc output having been available to compare against.
+
+Three passages that assumed regulatory use were reconciled rather than left to
+contradict the new text: the `reproduce_code()` documentation and two sections
+of the interface README had argued that generated code is what makes a
+point-and-click interface "acceptable for regulatory work". The argument for
+reproducibility survives without that claim, and now rests on a result being
+checkable and rerunnable rather than on its being submittable.
+
+Changes: `R/zzz.R` and an `@section Intended use` in `R/toxstats-package.R`;
+`DESCRIPTION`, `README.Rmd` and `NEWS.md`; a test that the startup message
+fires. In `shinytoxstats`: `R/disclaimer.R` as the single source used by all
+three surfaces, the page header in `R/app_ui.R`, the header comment in
+`R/reproduce.R`, a callout in `inst/report/report.qmd`, `DESCRIPTION`,
+`README.md`, and a test that the generated script carries the disclaimer and
+still parses.
+
+---

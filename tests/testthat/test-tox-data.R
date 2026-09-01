@@ -226,3 +226,23 @@ test_that("print reports an unbalanced design as such", {
   raw$growth[1] <- NA
   expect_output(print(tox_data(raw, response = "growth")), "unbalanced")
 })
+
+# the intended-use disclaimer -------------------------------------------------
+
+test_that("attaching the package states the intended use", {
+  # The disclaimer is attached to the session rather than to each printed
+  # result, so if this message stops firing there is nothing else in an
+  # interactive session that carries it.
+  expect_message(
+    toxstats:::.onAttach("lib", "toxstats"),
+    regexp = "generative AI"
+  )
+  expect_message(
+    toxstats:::.onAttach("lib", "toxstats"),
+    regexp = "validation only"
+  )
+  expect_message(
+    toxstats:::.onAttach("lib", "toxstats"),
+    regexp = "official purpose"
+  )
+})

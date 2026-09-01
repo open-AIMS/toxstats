@@ -10,6 +10,27 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 [![license](https://img.shields.io/badge/license-GPL%20%28%3E=%202%29-lightgrey.svg)](https://choosealicense.com/)
 <!-- badges: end -->
 
+## Intended use
+
+**This package was written with generative AI, and it is for testing and
+validation purposes only. It must not be used to derive toxicity
+estimates for regulatory submission, compliance reporting, or any other
+official purpose.**
+
+Every method is checked against the worked examples printed in the EPA
+method manuals, and those checks are in the test suite rather than
+asserted in prose. That establishes less than it may appear to.
+Agreement with a printed example shows that one path through one method
+reproduces one published number; it is not independent verification of
+the package, it does not cover the paths no manual exercises, and it is
+not the review a regulator would expect of software used to produce a
+submitted result.
+
+Use it to check an analysis done another way, to explore how the EPA
+decision rules behave, or to develop and test other software. For a
+result that will be relied on, obtain it from software your regulator
+accepts.
+
 ## Overview
 
 `toxstats` is an open-source implementation of the statistical methods
@@ -168,7 +189,12 @@ Tidepool Scientific or with the ToxCalc software it recreates. It
 implements the methods described in the EPA method manuals, which are US
 Government works, and it is offered without warranty of any kind. A
 laboratory remains responsible for satisfying itself, and its regulator,
-that an analysis is fit for the use it is put to.
+that an analysis is fit for the use it is put to. See **Intended use**
+above, which restricts that further.
+
+It is also not a validated replacement for ToxCalc, and does not claim
+to be. No ToxCalc output was available for comparison, so nothing here
+has been shown to reproduce what that program produced.
 
 No table of critical values that the EPA manuals reproduce from a
 third-party source is included here. Those values are computed instead;

@@ -13,7 +13,10 @@ Description: Computes the standard endpoints of a concentration-response
     rules are written for a regulatory setting but apply to any
     concentration-response toxicity data with a control. Recreates the
     capability of the withdrawn ToxCalc software (Tidepool Scientific), with
-    which this package is not affiliated.
+    which this package is not affiliated. Written with generative AI, and
+    intended for testing and validation only: it must not be used to derive
+    toxicity estimates for regulatory submission, compliance reporting, or any
+    other official purpose.
 License: GPL (>= 2)
 URL: https://open-aims.github.io/toxstats,
     https://github.com/open-AIMS/toxstats
