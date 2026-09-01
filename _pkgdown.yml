@@ -14,7 +14,7 @@ reference:
       The drivers. Each walks an EPA flowchart, selects the method the manual
       directs, and records why.
     contents:
-      - toxcalc
+      - tox_test
       - lc50
       - decisions
 
