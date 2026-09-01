@@ -11,9 +11,9 @@ Computes the standard endpoints of a concentration-response toxicity test: the n
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://beckyfisher.github.io/toxstats}
-  \item \url{https://github.com/beckyfisher/toxstats}
-  \item Report bugs at \url{https://github.com/beckyfisher/toxstats/issues}
+  \item \url{https://open-aims.github.io/toxstats}
+  \item \url{https://github.com/open-AIMS/toxstats}
+  \item Report bugs at \url{https://github.com/open-AIMS/toxstats/issues}
 }
 
 }

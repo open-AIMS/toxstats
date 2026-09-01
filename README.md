@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# toxcalc
+# toxstats
 
 <!-- badges: start -->
 
@@ -12,7 +12,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 
 ## Overview
 
-`toxcalc` is an open-source implementation of the statistical methods
+`toxstats` is an open-source implementation of the statistical methods
 specified in the US EPA Whole Effluent Toxicity (WET) method manuals. It
 recreates the capability of ToxCalc v5.0 (Tidepool Scientific),
 commercial software that has been withdrawn — the vendor product page
@@ -34,7 +34,7 @@ The EPA manuals specify not only the statistical tests but the decision
 rules that select between them. Those rules are the part that is hardest
 to reproduce by hand and easiest to leave undocumented.
 
-Every `toxcalc` analysis therefore carries an **audit trail**: a table
+Every `toxstats` analysis therefore carries an **audit trail**: a table
 recording each branch point of the flowchart — the question asked, the
 statistic, the answer, the consequence, and the section of the EPA
 manual that justifies it.
@@ -157,7 +157,7 @@ See `notes/TOXSTATS-human.md` for the plan and
 if (!requireNamespace("remotes")) {
   install.packages("remotes")
 }
-remotes::install_github("beckyfisher/toxstats")
+remotes::install_github("open-AIMS/toxstats")
 ```
 
 ## Standing and licence

@@ -103,7 +103,7 @@ validators, not duplicated across entry points.
 
 ## 5. Git Workflow
 
-Single remote, `origin` = `https://github.com/beckyfisher/toxstats`. Work
+Single remote, `origin` = `https://github.com/open-AIMS/toxstats`. Work
 branches off `main`; there is no fork or upstream.
 
 ---

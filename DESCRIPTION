@@ -15,9 +15,9 @@ Description: Computes the standard endpoints of a concentration-response
     capability of the withdrawn ToxCalc software (Tidepool Scientific), with
     which this package is not affiliated.
 License: GPL (>= 2)
-URL: https://beckyfisher.github.io/toxstats,
-    https://github.com/beckyfisher/toxstats
-BugReports: https://github.com/beckyfisher/toxstats/issues
+URL: https://open-aims.github.io/toxstats,
+    https://github.com/open-AIMS/toxstats
+BugReports: https://github.com/open-AIMS/toxstats/issues
 Depends:
     R (>= 4.1)
 Imports:
