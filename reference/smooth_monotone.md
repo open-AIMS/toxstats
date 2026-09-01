@@ -1,0 +1,72 @@
+# Smooth a sequence to be monotone
+
+Replaces a sequence by the closest monotone sequence, by repeatedly
+pooling adjacent values that violate the required direction and
+replacing them with their weighted mean. The EPA manuals call this
+"smoothing" and require it before the trimmed Spearman-Karber and linear
+interpolation methods, both of which assume a monotone
+concentration-response relationship.
+
+## Usage
+
+``` r
+smooth_monotone(y, w = NULL, direction = c("decreasing", "increasing"))
+```
+
+## Arguments
+
+- y:
+
+  A numeric vector to smooth.
+
+- w:
+
+  Optional numeric vector of weights the same length as `y`, all
+  positive. Defaults to equal weights.
+
+- direction:
+
+  The direction the smoothed sequence must follow. `"decreasing"` (the
+  default) returns a non-increasing sequence, as expected for a response
+  reduced by a toxicant. `"increasing"` returns a non-decreasing
+  sequence, as expected for a proportion responding.
+
+## Value
+
+A numeric vector the same length as `y`, monotone in the requested
+direction, with the same weighted mean as `y`.
+
+## Details
+
+This is the pool-adjacent-violators algorithm (PAVA). The manuals
+describe the operation as averaging a violating pair, but their own
+worked examples pool runs of three and more values at once – Appendix M
+pools four groups, and Appendix K collapses five – and the text
+acknowledges that "unusual patterns in the deviations from monotonicity
+may require an additional step of smoothing". PAVA is the algorithm that
+performs the pooling to convergence, and it reproduces the published
+examples exactly; repeated pairwise averaging does not, because it loses
+track of how many original values each pooled block represents.
+
+Weights control how a pooled block is averaged. The default of equal
+weights is what the EPA linear interpolation method requires, because it
+smooths the concentration *means* rather than the underlying
+observations. Supply `w` to weight by the number of observations behind
+each value, which is what Williams' test requires for its isotonic dose
+means.
+
+## References
+
+US EPA (2002) EPA-821-R-02-013, Appendix L section 4 and Appendix M
+section 7.
+
+Barlow RE, Bartholomew DJ, Bremner JM, Brunk HD (1972) *Statistical
+Inference Under Order Restrictions*. Wiley, London.
+
+## Examples
+
+``` r
+# Appendix K mortality proportions collapse to a single value
+smooth_monotone(c(0.05, 0.00, 0.05, 0.00, 0.00), direction = "increasing")
+#> [1] 0.02 0.02 0.02 0.02 0.02
+```

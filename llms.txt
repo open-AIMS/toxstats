@@ -1,0 +1,314 @@
+# toxstats
+
+## Overview
+
+`toxstats` is an open-source implementation of the statistical methods
+specified in the US EPA Whole Effluent Toxicity (WET) method manuals. It
+recreates the capability of ToxCalc v5.0 (Tidepool Scientific),
+commercial software that has been withdrawn — the vendor product page
+now returns a 404.
+
+The package provides both branches of the EPA analysis:
+
+- the **hypothesis-testing** flowchart, giving the no-observed-effect
+  concentration (NOEC), the lowest-observed-effect concentration (LOEC),
+  the minimum significant difference (MSD) and the percent MSD (PMSD);
+- the **point-estimation** flowchart, giving the median lethal
+  concentration (LC50) by the graphical, Spearman-Karber, trimmed
+  Spearman-Karber or probit method, and the inhibition concentration
+  (ICp) by linear interpolation with bootstrap confidence limits.
+
+## Why this exists
+
+The EPA manuals specify not only the statistical tests but the decision
+rules that select between them. Those rules are the part that is hardest
+to reproduce by hand and easiest to leave undocumented.
+
+Every `toxstats` analysis therefore carries an **audit trail**: a table
+recording each branch point of the flowchart — the question asked, the
+statistic, the answer, the consequence, and the section of the EPA
+manual that justifies it.
+
+``` r
+
+summary(tox_test(fathead_c1, response = "weight",
+                pmsd_bounds = "fathead_growth"))
+#> EPA WET hypothesis test
+#> Flowchart: EPA-821-R-02-013 Figure 2
+#> 
+#>    1  Is the response a proportion requiring transformation?
+#>       no transformation needed
+#>       (EPA-821-R-02-013 Appendix B, section 4.2)
+#>    2  Are the pooled within-group residuals normally distributed?
+#>       0.9507, p = 0.378 -> residuals consistent with normality
+#>       (EPA-821-R-02-013 Appendix B, section 2.1)
+#>    3  Are the variances homogeneous across concentrations?
+#>       7.856, p = 0.097 -> variances not significantly different
+#>       (EPA-821-R-02-013 Appendix B, section 3)
+#>    4  Is replication equal across all concentrations?
+#>       4, 4, 4, 4, 4 replicates, balanced
+#>       (EPA-821-R-02-013 Figure 2)
+#>    5  Which test was run?
+#>       Dunnett's procedure
+#>       (EPA-821-R-02-013 Appendix C)
+#> 
+#>   NOEC 128    LOEC 256
+#>   MSD  0.1618    PMSD 23.9 per cent (EPA bounds 12 to 30: within)
+```
+
+Those are the growth data from Appendix C of the chronic manual, and the
+flowchart arrives at Dunnett’s procedure, the NOEC of 128 and the LOEC
+of 256 that the manual itself reports.
+
+## Running both branches
+
+A laboratory report usually carries a no-effect concentration and a
+point estimate together. `branch = "both"` returns them from one call,
+and [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) gives
+one tidy row per endpoint.
+
+``` r
+
+fit <- tox_test(ceriodaphnia_m1, response = "young",
+               branch = "both", seed = 42)
+as.data.frame(fit)[, c("endpoint", "value", "lower", "upper", "method")]
+#>   endpoint     value    lower    upper method
+#> 1     NOEC  6.250000       NA       NA  steel
+#> 2     LOEC 12.500000       NA       NA  steel
+#> 3      MSD  5.274541       NA       NA  steel
+#> 4     PMSD 23.547058       NA       NA  steel
+#> 5     IC25  8.571544 8.300892 8.886289    icp
+```
+
+The point estimate uses all the data, including any concentration
+excluded from the no-effect concentration, which is what section 9.5.2
+requires.
+
+## Point estimation
+
+[`lc50()`](https://open-aims.github.io/toxstats/reference/lc50.md) walks
+the Figure 6 chart of the acute manual. Each of the four columns of its
+Table 20 was constructed to exercise one of the four methods, and each
+routes to the right one:
+
+``` r
+
+for (column in c("graphical", "spearman_karber", "trimmed", "probit")) {
+  chosen <- lc50(acute_table20, response = column,
+                 n_exposed = "exposed", type = "quantal")
+  cat(format(column, width = 16), "->", chosen$selected, "\n")
+}
+#> graphical        -> graphical_lc50 
+#> spearman_karber  -> spearman_karber 
+#> trimmed          -> trimmed_spearman_karber 
+#> probit           -> probit_lc
+```
+
+## Fidelity
+
+The target is faithfulness to the EPA method manuals, validated against
+the worked examples printed in them. It is **not** a bit-for-bit clone
+of ToxCalc; no ToxCalc output was available for comparison.
+
+Almost every published value reproduces exactly. The exceptions are
+documented rather than smoothed over, and each is reconciled by a test:
+
+- **seven printed values do not follow from the manuals’ own data**, all
+  through hand-calculation rounding or arithmetic slips, and one dataset
+  is not the dataset its own text says it is;
+- **the ICp interval** cannot be matched, because the program that
+  produced it names the random seed it used and nothing else can
+  reproduce that draw.
+
+That is now the only one. The trimmed Spearman-Karber interval was the
+other, the manual having delegated it to a program whose variance
+formula it never states; it is reproduced exactly since the formula was
+rederived. The vignette records what it took.
+
+The vignette `vignettes/recreating-toxcalc.qmd` records every point at
+which the source material was ambiguous, internally inconsistent, or at
+odds with modern practice, and what was decided in each case, with the
+evidence.
+
+[`williams()`](https://open-aims.github.io/toxstats/reference/williams.md)
+implements the one ToxCalc feature that is not an EPA method. Neither
+manual gives a worked example or a table of critical values for it, so
+the values are simulated and the implementation is validated against
+mathematical identities instead. It is labelled as an extension
+throughout, and neither flowchart will ever select it.
+
+## Status
+
+**Experimental, under active development.** Both branches are complete
+and `R CMD check` is clean. Still to come: the marine manual’s
+endpoints, designs with more than one control, and the remaining
+alternative tests.
+
+See `notes/TOXSTATS-human.md` for the plan and
+`notes/TOXSTATS-claude.md` for the specification.
+
+## Installation
+
+``` r
+
+if (!requireNamespace("remotes")) {
+  install.packages("remotes")
+}
+remotes::install_github("open-AIMS/toxstats")
+```
+
+## Standing and licence
+
+This package is **not** produced, endorsed, validated or reviewed by the
+US Environmental Protection Agency, and it is not affiliated with
+Tidepool Scientific or with the ToxCalc software it recreates. It
+implements the methods described in the EPA method manuals, which are US
+Government works, and it is offered without warranty of any kind. A
+laboratory remains responsible for satisfying itself, and its regulator,
+that an analysis is fit for the use it is put to.
+
+No table of critical values that the EPA manuals reproduce from a
+third-party source is included here. Those values are computed instead;
+the reasoning is in the vignette.
+
+## References
+
+- US EPA (2002) *Methods for Measuring the Acute Toxicity of Effluents
+  and Receiving Waters to Freshwater and Marine Organisms*, 5th ed.
+  EPA-821-R-02-012.
+- US EPA (2002) *Short-term Methods for Estimating the Chronic Toxicity
+  of Effluents and Receiving Waters to Freshwater Organisms*, 4th ed.
+  EPA-821-R-02-013.
+- US EPA (2002) *Short-term Methods for Estimating the Chronic Toxicity
+  of Effluents and Receiving Waters to Marine and Estuarine Organisms*,
+  3rd ed. EPA-821-R-02-014.
+- Hamilton MA, Russo RC, Thurston RV (1977) Trimmed Spearman-Karber
+  method for estimating median lethal concentrations in toxicity
+  bioassays. *Environmental Science & Technology* 11:714-719.
+- Norberg-King TJ (1993) *A linear interpolation method for sublethal
+  toxicity: the inhibition concentration (ICp) approach*, version 2.0.
+  EPA/600/M-91/037.
+- Williams DA (1971) A test for differences between treatment means when
+  several dose levels are compared with a zero dose control.
+  *Biometrics* 27:103-117.
+
+# Package index
+
+## Start here
+
+The drivers. Each walks an EPA flowchart, selects the method the manual
+directs, and records why.
+
+- [`tox_test()`](https://open-aims.github.io/toxstats/reference/tox_test.md)
+  [`summary(`*`<tox_test>`*`)`](https://open-aims.github.io/toxstats/reference/tox_test.md)
+  [`as.data.frame(`*`<tox_test>`*`)`](https://open-aims.github.io/toxstats/reference/tox_test.md)
+  : Run the EPA hypothesis-testing analysis
+- [`lc50()`](https://open-aims.github.io/toxstats/reference/lc50.md)
+  [`summary(`*`<tox_lc50>`*`)`](https://open-aims.github.io/toxstats/reference/lc50.md)
+  [`as.data.frame(`*`<tox_lc50>`*`)`](https://open-aims.github.io/toxstats/reference/lc50.md)
+  : Estimate a median lethal concentration
+- [`decisions()`](https://open-aims.github.io/toxstats/reference/decisions.md)
+  : Extract the decision trail
+
+## Preparing data
+
+The input contract and the transformations every method begins with.
+
+- [`tox_data()`](https://open-aims.github.io/toxstats/reference/tox_data.md)
+  [`print(`*`<tox_data>`*`)`](https://open-aims.github.io/toxstats/reference/tox_data.md)
+  [`summary(`*`<tox_data>`*`)`](https://open-aims.github.io/toxstats/reference/tox_data.md)
+  [`as.data.frame(`*`<tox_data>`*`)`](https://open-aims.github.io/toxstats/reference/tox_data.md)
+  : Prepare toxicity test data for analysis
+- [`arcsine_sqrt()`](https://open-aims.github.io/toxstats/reference/arcsine_sqrt.md)
+  : Arc sine square root transformation
+- [`inv_arcsine_sqrt()`](https://open-aims.github.io/toxstats/reference/inv_arcsine_sqrt.md)
+  : Back-transform an arc sine square root value
+- [`abbott()`](https://open-aims.github.io/toxstats/reference/abbott.md)
+  : Abbott's correction for control response
+- [`smooth_monotone()`](https://open-aims.github.io/toxstats/reference/smooth_monotone.md)
+  : Smooth a sequence to be monotone
+- [`is_monotone()`](https://open-aims.github.io/toxstats/reference/is_monotone.md)
+  : Is a sequence monotone?
+
+## Assumptions and sensitivity
+
+The tests that decide which branch of the hypothesis-testing flowchart
+is taken, and the measures of how sensitive the test was.
+
+- [`epa_normality()`](https://open-aims.github.io/toxstats/reference/epa_normality.md)
+  : Test the normality assumption
+- [`epa_variance()`](https://open-aims.github.io/toxstats/reference/epa_variance.md)
+  : Test the homogeneity of variance assumption
+- [`msd()`](https://open-aims.github.io/toxstats/reference/msd.md) :
+  Minimum significant difference
+- [`pmsd()`](https://open-aims.github.io/toxstats/reference/pmsd.md) :
+  Percent minimum significant difference
+
+## Hypothesis tests
+
+The tests the flowchart can select.
+[`williams()`](https://open-aims.github.io/toxstats/reference/williams.md)
+is an extension rather than an EPA method and is never selected
+automatically.
+
+- [`dunnett()`](https://open-aims.github.io/toxstats/reference/dunnett.md)
+  : Dunnett's procedure
+- [`bonferroni_t()`](https://open-aims.github.io/toxstats/reference/bonferroni_t.md)
+  : The t test with Bonferroni's adjustment
+- [`dunn_sidak_t()`](https://open-aims.github.io/toxstats/reference/dunn_sidak_t.md)
+  : The t test with Dunn-Sidak's adjustment
+- [`welch_t()`](https://open-aims.github.io/toxstats/reference/welch_t.md)
+  : Welch's t test against the control
+- [`steel()`](https://open-aims.github.io/toxstats/reference/steel.md) :
+  Steel's Many-One Rank Test
+- [`wilcoxon_rank_sum()`](https://open-aims.github.io/toxstats/reference/wilcoxon_rank_sum.md)
+  : Wilcoxon Rank Sum Test with Bonferroni's adjustment
+- [`fisher_exact()`](https://open-aims.github.io/toxstats/reference/fisher_exact.md)
+  : Fisher's Exact Test
+- [`williams()`](https://open-aims.github.io/toxstats/reference/williams.md)
+  : Williams' test
+
+## Point estimation
+
+Median lethal concentrations from the Figure 6 flowchart, and inhibition
+concentrations by linear interpolation.
+
+- [`graphical_lc50()`](https://open-aims.github.io/toxstats/reference/graphical_lc50.md)
+  : Estimate the LC50 by the graphical method
+- [`spearman_karber()`](https://open-aims.github.io/toxstats/reference/spearman_karber.md)
+  : Estimate the LC50 by the Spearman-Karber method
+- [`trimmed_spearman_karber()`](https://open-aims.github.io/toxstats/reference/trimmed_spearman_karber.md)
+  : Estimate the LC50 by the trimmed Spearman-Karber method
+- [`probit_lc()`](https://open-aims.github.io/toxstats/reference/probit_lc.md)
+  : Estimate lethal concentrations by the probit method
+- [`icp()`](https://open-aims.github.io/toxstats/reference/icp.md) :
+  Estimate an inhibition concentration by linear interpolation
+
+## EPA worked-example data
+
+The datasets the manuals use in their worked examples, each documented
+with the results the manual publishes for it.
+
+- [`fathead_b1`](https://open-aims.github.io/toxstats/reference/fathead_b1.md)
+  : Fathead minnow larval growth, EPA Table B.1
+- [`fathead_c1`](https://open-aims.github.io/toxstats/reference/fathead_c1.md)
+  : Fathead minnow larval growth, EPA Table C.1
+- [`ceriodaphnia_b7`](https://open-aims.github.io/toxstats/reference/ceriodaphnia_b7.md)
+  : Ceriodaphnia dubia reproduction, EPA Table B.7
+- [`ceriodaphnia_e1`](https://open-aims.github.io/toxstats/reference/ceriodaphnia_e1.md)
+  : Ceriodaphnia dubia reproduction, EPA Table E.1
+- [`ceriodaphnia_g2`](https://open-aims.github.io/toxstats/reference/ceriodaphnia_g2.md)
+  : Ceriodaphnia dubia mortality, EPA Table G.2
+- [`ceriodaphnia_m1`](https://open-aims.github.io/toxstats/reference/ceriodaphnia_m1.md)
+  : Ceriodaphnia dubia reproduction, EPA Table M.1
+- [`acute_table20`](https://open-aims.github.io/toxstats/reference/acute_table20.md)
+  : LC50 worked-example mortality data, EPA acute Table 20
+- [`epa_pmsd_bounds`](https://open-aims.github.io/toxstats/reference/epa_pmsd_bounds.md)
+  : EPA variability criteria for sublethal endpoints
+
+# Articles
+
+### All vignettes
+
+- [Recreating ToxCalc: methods and
+  decisions](https://open-aims.github.io/toxstats/articles/recreating-toxcalc.md):
