@@ -54,17 +54,29 @@ against the 77.11 the manual's program prints.
 
 \subsection{The interval}{
 
-\strong{This is the one place where the package does not reproduce the manual.}
-The manual delegates the interval to a program whose source is not
-available, and it does not state the formula. Hamilton et al. (1977) gave a
-variance expression that Hamilton et al. (1978) then corrected, and the
-correction is not retrievable from any public source found.
+The manual delegates the interval to a program whose source it does not
+supply, and it states neither the variance formula nor the multiplier. Two
+choices together recover the printed limits, and both were established by
+testing candidates against the printed output rather than assumed:
+\itemize{
+\item the variance is the delta method applied analytically to the estimator,
+\strong{holding the trim fixed} even when it was chosen from the data. This is
+the variance of Hamilton et al. (1977). Differentiating through the choice
+of trim as well was tried, and does not reproduce the published limits.
+\item the multiplier is 2.0, the same rounding of 1.96 that section 11.2.3.3
+uses for the untrimmed method, rather than 1.96 itself.
+}
 
-The interval here is therefore obtained by the delta method applied to the
-estimator actually implemented, which is exact for that estimator rather
-than adopted on faith. On the acute Table 20 data it gives 69.5 to 85.6
-against the 69.74 to 85.26 the manual prints, a difference in the third
-significant figure. The point estimate is unaffected.
+On the acute Table 20 data this gives 69.74 to 85.26, which is what the
+manual prints, to every digit printed.
+
+The derivation is set out with the internal \code{tsk_variance()}. It is derived
+here rather than transcribed: Hamilton's corrected expression is not
+retrievable from any public source found, and the one implementation of it
+that could be located, in the \code{ecotoxicology} package, is under a licence
+this package cannot absorb. That implementation is used instead as an
+independent check, and the two agree to machine precision on every
+configuration but one; see the note on \code{V6} in the package vignette.
 }
 }
 \examples{

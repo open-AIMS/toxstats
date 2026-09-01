@@ -121,12 +121,14 @@ documented rather than smoothed over, and each is reconciled by a test:
 - **seven printed values do not follow from the manuals’ own data**, all
   through hand-calculation rounding or arithmetic slips, and one dataset
   is not the dataset its own text says it is;
-- **the trimmed Spearman-Karber interval** is the one quantity that
-  differs for a reason other than an error in the manual: the manual
-  delegates it to a program whose formula it never states, and
-  Hamilton’s corrected variance is not publicly retrievable;
-- **the ICp interval** cannot be matched because the program that
-  produced it names the random seed it used.
+- **the ICp interval** cannot be matched, because the program that
+  produced it names the random seed it used and nothing else can
+  reproduce that draw.
+
+That is now the only one. The trimmed Spearman-Karber interval was the
+other, the manual having delegated it to a program whose variance
+formula it never states; it is reproduced exactly since the formula was
+rederived. The vignette records what it took.
 
 The vignette `vignettes/recreating-toxcalc.qmd` records every point at
 which the source material was ambiguous, internally inconsistent, or at

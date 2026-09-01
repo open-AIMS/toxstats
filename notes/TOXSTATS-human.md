@@ -203,7 +203,10 @@ than taken from `mvtnorm`, because `mvtnorm` is randomised and gives a slightly
 different answer every call. The probit heterogeneity statistic is Pearson's,
 not the deviance, and its limits are Fieller's, not the delta method — in both
 cases because that is what reproduces the printed output and the alternative
-does not. The Spearman-Karber interval uses the manual's own multiplier of 2.0.
+does not. The Spearman-Karber interval uses the manual's own multiplier of 2.0,
+and so does the trimmed version, which is half of why that interval now
+reproduces exactly; the other half is that the variance is derived
+analytically, holding the trim fixed rather than treating it as estimated.
 Partial responses are counted after smoothing and adjustment, because counting
 the raw ones sends the manual's own example to the wrong method.
 

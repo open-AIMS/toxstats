@@ -27,6 +27,7 @@ Imports:
 Suggests:
     boot,
     covr,
+    ecotoxicology,
     knitr,
     MASS,
     multcomp,

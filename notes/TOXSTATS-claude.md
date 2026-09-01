@@ -586,11 +586,58 @@ them; the same reasoning appears, less densely, in
    every call. `mvtnorm` moved from Imports to Suggests, where it is a test
    oracle. See `R/critical.R`.
 
-3. **TSK confidence interval convention** (Phase 5). Multiplier (1.96 vs 2.0)
-   and variance denominator (`n_i` vs `n_i - 1`) are not both determinable from
-   the manual text. *Plan:* fit them against the two published fixtures. **If no
-   combination reproduces both (77.11 / 69.74 / 85.26, and the Appendix K case),
-   escalate rather than pick the closer one.**
+3. ~~**TSK confidence interval convention**~~ **RESOLVED (post-Phase 8):
+   analytic delta method with the trim held fixed, multiplier 2.0.** Reproduces
+   77.11 (69.74, 85.26) exactly, and the Appendix K trim of 20.41 per cent.
+
+   The first answer was wrong and stood for several phases. A *numerical* delta
+   method, perturbing each observed proportion and recomputing, gave 69.6 to
+   85.4 and was documented as the one quantity the package could not reproduce.
+   Two errors were compounded in it:
+
+   - it recomputed the automatic trim inside each perturbation, so the choice of
+     trim propagated into the variance. Hamilton holds the trim fixed;
+   - it used 1.96 where §11.2.3.3 uses 2.0. That accounts for about two per cent
+     of the half-width, which is the residual that had been blamed on the
+     variance.
+
+   The derivative is now taken analytically. Summation by parts rewrites
+   `mu = sum((t_j + t_{j+1})/2 (q_{j+1} - q_j))` as
+   `mu = (t_m + t_{m+1})/2 + sum_i q_i (t_{i-1} - t_{i+1})/2`, in which every
+   dependence on the proportions is explicit; the interior proportions enter
+   through their own `q_i`, and the four bracketing the trim and its complement
+   through the interpolated endpoints `t_0` and `t_{m+1}`. Written as one
+   general expression, not as a per-case formula. See `tsk_variance()` in
+   `R/point_estimation.R`.
+
+   *Validation.* Two independent checks, because the manual supplies a single
+   worked example:
+
+   - a numerical derivative of this package's own estimator, needing no
+     external reference, agrees to 1e-8 over 1,253 random designs;
+   - `ecotoxicology::TSK`, a translation of EPA's discontinued EERD programs,
+     agrees to machine precision in every configuration except one.
+
+   *The exception, recorded because it will look like our error.* Where exactly
+   one concentration falls inside the trim, `ecotoxicology`'s `V6` term carries
+   the head contribution with the opposite sign to the one `V2` gives the same
+   contribution. Flipping it brings all 216 such designs to machine precision.
+   The finite-difference check confirms the sign used here. Their `V1`, `V2`,
+   `V3` and `V5` were each reproduced algebraically from the derivation above,
+   which is what makes the `V6` sign identifiable as an error rather than a
+   different convention.
+
+   *Two defects in `ecotoxicology::TSK`*, both in its control-handling branch,
+   so the oracle test passes it the treatments only: it formats a non-integer
+   trim with `%d`, and with a non-zero control response it divides by
+   `n[-1] - n[1]`, zero in a balanced design.
+
+   *A defect of ours that the comparison found.* `tsk_estimate()` took the last
+   concentration at or below `1 - a` as the upper endpoint; the correct
+   convention is the first concentration to reach it. The two differ only when
+   the response plateaus exactly on the boundary, which no EPA worked example
+   does. The endpoint selection is now shared with the variance through
+   `tsk_span()` so the two cannot diverge again.
 
 4. **Probit specification** (Phase 5). Three coupled ambiguities: (a) Abbott-
    adjust the proportions then fit, versus fit a natural-response parameter

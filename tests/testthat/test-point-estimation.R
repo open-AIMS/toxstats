@@ -131,18 +131,74 @@ test_that("trimmed_spearman_karber reproduces the printed LC50", {
   expect_equal(round(fit$estimates$estimate, 2), 77.11)
 })
 
-test_that("the trimmed interval is close to, but not identical with, the manual", {
-  # Documented departure: the manual delegates the interval to a program whose
-  # variance formula it does not state, and Hamilton's corrected expression is
-  # not retrievable. The delta method is used instead. The manual prints
-  # 69.74 to 85.26.
+test_that("the trimmed interval reproduces the printed limits", {
+  # The manual prints 69.74 to 85.26 and does not state the formula that
+  # produced them. Two things are needed to recover them: the variance must be
+  # the analytic delta method holding the trim fixed, and the multiplier must
+  # be the 2.0 the manual uses for the untrimmed method rather than 1.96.
   fit <- trimmed_spearman_karber(table20("trimmed"))
 
-  expect_equal(fit$estimates$ci_method, "delta method on the log10 scale")
-  expect_equal(round(fit$estimates$lower), 70)
-  expect_equal(round(fit$estimates$upper), 85)
-  expect_lt(abs(fit$estimates$lower - 69.74), 0.5)
-  expect_lt(abs(fit$estimates$upper - 85.26), 0.5)
+  expect_equal(fit$estimates$ci_method, "Hamilton variance on the log10 scale")
+  expect_equal(round(fit$estimates$lower, 2), 69.74)
+  expect_equal(round(fit$estimates$upper, 2), 85.26)
+})
+
+test_that("the trimmed variance is the derivative of the estimate", {
+  # The variance is derived analytically, so the check that it belongs to the
+  # estimator actually implemented is a numerical derivative of that estimator.
+  # An explicit trim is used so that no proportion sits exactly on either
+  # boundary; perturbing such a proportion destroys the bracket the estimator
+  # needs, which is the reason the analytic form replaced a numerical one.
+  fit <- trimmed_spearman_karber(table20("trimmed"), trim = 0.3)
+  x <- log10(fit$working$conc)
+  adjusted <- fit$working$adjusted
+  h <- 1e-7
+
+  gradient <- vapply(
+    seq_along(adjusted),
+    function(i) {
+      up <- adjusted
+      down <- adjusted
+      up[i] <- up[i] + h
+      down[i] <- down[i] - h
+      (toxstats:::tsk_estimate(x, up, 0.3) -
+        toxstats:::tsk_estimate(x, down, 0.3)) /
+        (2 * h)
+    },
+    numeric(1)
+  )
+  numerical <- sum(
+    gradient^2 * adjusted * (1 - adjusted) / fit$working$n
+  )
+  expect_equal(fit$variance, numerical, tolerance = 1e-6)
+})
+
+test_that("the trimmed estimate takes the narrowest range holding the response", {
+  # A plateau sitting exactly on 1 - trim is the one configuration in which the
+  # first and the last concentration reaching that level differ. The response
+  # here is flat at 0.88 across the top two concentrations, and the trim is
+  # 0.12, so the estimate must use the lower of them: the plateau carries no
+  # response and extending across it would inflate the result.
+  plateau <- data.frame(
+    conc = c(0, 5, 10, 20, 40, 80, 160),
+    dead = c(0, 1, 2, 5, 18, 22, 22),
+    exposed = 25
+  )
+  fit <- trimmed_spearman_karber(
+    plateau,
+    response = "dead",
+    n_exposed = "exposed",
+    type = "quantal"
+  )
+
+  span <- toxstats:::tsk_span(
+    log10(fit$working$conc),
+    fit$working$adjusted,
+    fit$trim
+  )
+  expect_equal(fit$working$adjusted[span$high], 1 - fit$trim)
+  expect_lt(span$high, length(fit$working$adjusted))
+  expect_equal(span$tail, log10(fit$working$conc[span$high]))
 })
 
 test_that("an explicit trim overrides the automatic one", {
@@ -241,4 +297,61 @@ test_that("the working table records what each step did", {
 test_that("the estimates print with their reference", {
   expect_output(print(spearman_karber(table20("spearman_karber"))), "11.2.3")
   expect_output(print(probit_lc(table20("probit"))), "Chi-square")
+})
+
+# an independent implementation as an oracle ---------------------------------
+
+test_that("the trimmed method agrees with the ecotoxicology package", {
+  # `ecotoxicology` is an independent translation of the EPA's own discontinued
+  # EERD programs, so it carries Hamilton's variance directly. It is the only
+  # external check available on this method, the EPA manuals printing a single
+  # worked example between them.
+  #
+  # The control is dropped before the call and the response is zero there, so
+  # no control correction is needed on either side. That also avoids two
+  # defects in `ecotoxicology::TSK`, both of which are confined to its
+  # control-handling branch: it formats a non-integer trim with `%d`, and it
+  # divides by `n[-1] - n[1]`, which is zero for a balanced design.
+  skip_if_not_installed("ecotoxicology")
+
+  designs <- list(
+    data.frame(
+      conc = c(0, 6.25, 12.5, 25, 50, 100),
+      dead = c(0, 1, 3, 8, 15, 19),
+      exposed = 20
+    ),
+    data.frame(
+      conc = c(0, 5, 10, 20, 40, 80),
+      dead = c(0, 0, 1, 5, 14, 18),
+      exposed = 20
+    ),
+    data.frame(
+      conc = c(0, 1, 2, 4, 8, 16, 32),
+      dead = c(0, 0, 1, 4, 12, 22, 24),
+      exposed = 25
+    )
+  )
+
+  for (design in designs) {
+    fit <- trimmed_spearman_karber(
+      design,
+      response = "dead",
+      n_exposed = "exposed",
+      type = "quantal"
+    )
+
+    grDevices::pdf(NULL)
+    reference <- suppressWarnings(ecotoxicology::TSK(
+      x = design$conc[-1],
+      r = design$dead[-1],
+      n = design$exposed[-1],
+      A = fit$trim
+    ))
+    grDevices::dev.off()
+
+    expect_equal(fit$estimates$estimate, reference$mu)
+    # Their limits use a multiplier of 1.96 where the manual uses 2.0, so the
+    # variance is compared rather than the limits.
+    expect_equal(sqrt(fit$variance), unname(log10(reference$gsd)))
+  }
 })

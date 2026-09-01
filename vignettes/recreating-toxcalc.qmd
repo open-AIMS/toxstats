@@ -472,20 +472,32 @@ the raw proportions gives a different answer.
 The point estimate is settled too: 77.1105 against the 77.11 the manual's
 program prints.
 
-The interval is not. The manual delegates it to a program whose source is not
-available and does not state the formula. Hamilton et al. (1977) published a
-variance expression that Hamilton et al. (1978) then corrected, and no
-retrievable source gives the corrected form.
+The interval took longer. The manual delegates it to a program whose source is
+not available and states neither the variance formula nor the multiplier.
+Hamilton et al. (1977) published a variance expression that Hamilton et al.
+(1978) then corrected, and no retrievable source gives the corrected form.
 
-Three candidates were tested against the printed 69.74 to 85.26. The plain
-Spearman-Karber variance scaled by `1/(1-2a)^2` gives 70.8 to 84.0, which is
-clearly too narrow. A parametric bootstrap gives 68.9 to 86.3, too wide. The
-delta method applied to the estimator as implemented gives 69.6 to 85.4.
+Three candidates were tried first, and all three were wrong. The plain
+Spearman-Karber variance scaled by `1/(1-2a)^2` gives 70.8 to 84.0, too narrow.
+A parametric bootstrap gives 68.9 to 86.3, too wide. A **numerical** delta
+method, perturbing each observed proportion and recomputing the estimate, gives
+69.6 to 85.4 — close, and for a while accepted as the best available.
 
-**Decision: the delta method.** It is exact for the estimator actually
-implemented rather than adopted on faith, and it is the closest of the three.
-The difference from the manual is in the third significant figure and does not
-affect the point estimate.
+It was wrong for two reasons, and finding them is what settled the section.
+
+**The trim must be held fixed.** The automatic trim is a function of the data,
+so recomputing it inside the perturbation propagates the choice of trim into
+the variance. That is arguably the more honest quantity, but it is not what the
+manual's program reports. Holding the trim fixed is what Hamilton does.
+
+**The multiplier is 2.0, not 1.96.** Section 11.2.3.3 writes the untrimmed
+interval as `m ± 2.0 sqrt(V(m))`, and the trimmed method inherits it. The two
+differ by about two per cent of the half-width, which is the size of the
+residual discrepancy that had been attributed to the variance.
+
+With the derivative taken analytically instead of numerically, the trim held
+fixed and the multiplier at 2.0, the package returns 69.74 to 85.26 — the
+manual's limits, to every digit printed.
 
 ```{r}
 #| label: tsk
@@ -495,9 +507,55 @@ trimmed_spearman_karber(
 )
 ```
 
-This is recorded here rather than buried, because it is the only quantity in
-the package known to differ from a published EPA value for a reason other than
-an error in the manual.
+### Deriving the variance rather than transcribing it
+
+The derivation is set out in full beside the internal `tsk_variance()`. In
+outline: summation by parts rewrites the Spearman-Karber sum so that every
+dependence on the proportions is explicit, after which each partial derivative
+is elementary. The interior proportions enter through their own rescaled value;
+the four proportions bracketing the trim and its complement enter through the
+interpolated endpoints.
+
+This is written as one general expression rather than as a separate formula for
+each possible number of interior concentrations, and that choice earned itself.
+Hamilton's variance is conventionally presented as five or six named terms
+selected by how many concentrations fall inside the trim, and the boundary
+cases are where such presentations go wrong.
+
+### An independent check, and what it found
+
+The `ecotoxicology` package is a translation of the EPA's own Ecological
+Exposure Research Division programs, discontinued in 1999, and it carries
+Hamilton's variance directly. It is the only external implementation located,
+and it is used in the test suite as an oracle rather than as a source: it is
+GPL (>= 3), which this package cannot absorb at GPL (>= 2).
+
+Across 1,253 randomly generated designs the two agree on the point estimate to
+machine precision, and on the variance to machine precision in every
+configuration except one. Where exactly one concentration falls inside the
+trim, they disagree by up to 60 per cent of the standard deviation.
+
+That case is covered in `ecotoxicology` by a term named `V6`, and the sign of
+its head contribution is opposite to the sign the same contribution carries in
+`V2`, the term used when more than one concentration falls inside. Flipping it
+brings all 216 such designs into machine-precision agreement. A numerical
+derivative of this package's own estimator, which needs no external reference
+at all, confirms the sign used here. The disagreement does not affect the EPA
+worked example, which has no concentration inside the trim.
+
+The comparison also found two defects in `ecotoxicology::TSK` that prevent it
+being called on the manual's own data: it formats a non-integer trim with `%d`,
+and where the control response is not zero it divides by `n[-1] - n[1]`, which
+is zero in a balanced design. Both are confined to its control-handling branch,
+so the oracle test passes it the treatments only.
+
+Two smaller findings came out of the same comparison. The trimmed method here
+had been taking the **last** concentration at or below `1 - a` as the upper
+endpoint, where the correct convention is the **first** concentration to reach
+it; the two differ only when the response plateaus exactly on the boundary,
+which no EPA worked example does. And `ecotoxicology` reports a heterogeneity
+chi-square of 3.076 for the probit example, confirming from an independent
+implementation the Pearson statistic chosen in section 14 over the deviance.
 
 ### 16. The inhibition concentration, and the step that is easy to miss
 
@@ -607,7 +665,8 @@ seen.
 
 Two of the four questions raised when this package was planned have since been
 settled by evidence and are described in sections 14 and 15: the probit
-interval, and the trimmed Spearman-Karber interval. These remain.
+interval, and the trimmed Spearman-Karber interval, the latter after an initial
+answer that turned out to be wrong. These remain.
 
 - **The expanded interval for fewer than seven replicates**, used by the
   linear-interpolation method. It is defined only in the ICPIN version 2.0

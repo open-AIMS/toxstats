@@ -279,17 +279,28 @@ spearman_karber <- function(x, ..., ci_level = 0.95) {
 #'
 #' ## The interval
 #'
-#' **This is the one place where the package does not reproduce the manual.**
-#' The manual delegates the interval to a program whose source is not
-#' available, and it does not state the formula. Hamilton et al. (1977) gave a
-#' variance expression that Hamilton et al. (1978) then corrected, and the
-#' correction is not retrievable from any public source found.
+#' The manual delegates the interval to a program whose source it does not
+#' supply, and it states neither the variance formula nor the multiplier. Two
+#' choices together recover the printed limits, and both were established by
+#' testing candidates against the printed output rather than assumed:
 #'
-#' The interval here is therefore obtained by the delta method applied to the
-#' estimator actually implemented, which is exact for that estimator rather
-#' than adopted on faith. On the acute Table 20 data it gives 69.5 to 85.6
-#' against the 69.74 to 85.26 the manual prints, a difference in the third
-#' significant figure. The point estimate is unaffected.
+#' * the variance is the delta method applied analytically to the estimator,
+#'   **holding the trim fixed** even when it was chosen from the data. This is
+#'   the variance of Hamilton et al. (1977). Differentiating through the choice
+#'   of trim as well was tried, and does not reproduce the published limits.
+#' * the multiplier is 2.0, the same rounding of 1.96 that section 11.2.3.3
+#'   uses for the untrimmed method, rather than 1.96 itself.
+#'
+#' On the acute Table 20 data this gives 69.74 to 85.26, which is what the
+#' manual prints, to every digit printed.
+#'
+#' The derivation is set out with the internal `tsk_variance()`. It is derived
+#' here rather than transcribed: Hamilton's corrected expression is not
+#' retrievable from any public source found, and the one implementation of it
+#' that could be located, in the `ecotoxicology` package, is under a licence
+#' this package cannot absorb. That implementation is used instead as an
+#' independent check, and the two agree to machine precision on every
+#' configuration but one; see the note on `V6` in the package vignette.
 #'
 #' @inheritParams toxstats_params
 #' @param trim The proportion to trim from each tail, or `NULL` for the
@@ -336,41 +347,7 @@ trimmed_spearman_karber <- function(x, ..., trim = NULL, ci_level = 0.95) {
   }
 
   m <- tsk_estimate(parts$x, parts$adjusted, trim)
-
-  # The delta method on the estimator as implemented. The smoothing and the
-  # Abbott adjustment are not differentiable everywhere, so the derivative is
-  # taken numerically with respect to the observed counts.
-  gradient <- vapply(
-    seq_along(parts$observed),
-    function(i) {
-      h <- 1e-6
-      # A proportion of exactly 0 or 1 is common in these designs, and
-      # perturbing past the boundary is not a proportion at all. The step is
-      # clipped and the divisor taken from the step actually used, so the
-      # difference becomes one-sided at a boundary rather than wrong.
-      upper <- min(parts$observed[i] + h, 1)
-      lower <- max(parts$observed[i] - h, 0)
-      if (upper == lower) {
-        return(0)
-      }
-      at <- function(value) {
-        perturbed <- parts$observed
-        perturbed[i] <- value
-        recompute_tsk(
-          perturbed,
-          parts$control_observed,
-          parts$x,
-          trim,
-          automatic
-        )
-      }
-      (at(upper) - at(lower)) / (upper - lower)
-    },
-    numeric(1)
-  )
-  variance <- sum(
-    gradient^2 * parts$observed * (1 - parts$observed) / parts$n
-  )
+  variance <- tsk_variance(parts$x, parts$adjusted, parts$n, trim)
   half <- epa_multiplier(ci_level) * sqrt(variance)
 
   new_estimate(
@@ -387,7 +364,7 @@ trimmed_spearman_karber <- function(x, ..., trim = NULL, ci_level = 0.95) {
       estimate = 10^m,
       lower = 10^(m - half),
       upper = 10^(m + half),
-      ci_method = "delta method on the log10 scale",
+      ci_method = "Hamilton variance on the log10 scale",
       stringsAsFactors = FALSE
     ),
     working = working_frame(parts),
@@ -417,28 +394,16 @@ auto_trim <- function(adjusted) {
 #' @return The estimate of log10(LC50).
 #' @noRd
 tsk_estimate <- function(x, adjusted, trim) {
-  crossing <- function(target) {
-    below <- which(adjusted <= target)
-    if (!length(below)) {
-      return(x[1])
-    }
-    j <- max(below)
-    if (j == length(adjusted) || adjusted[j] == target) {
-      return(x[j])
-    }
-    x[j] +
-      (target - adjusted[j]) *
-        (x[j + 1] - x[j]) /
-        (adjusted[j + 1] - adjusted[j])
+  span <- tsk_span(x, adjusted, trim)
+  if (is.null(span)) {
+    return(NA_real_)
   }
 
-  lower <- crossing(trim)
-  upper <- crossing(1 - trim)
-  interior <- adjusted > trim & adjusted < 1 - trim
-
-  points_x <- c(lower, x[interior], upper)
-  points_p <- c(trim, adjusted[interior], 1 - trim)
-  rescaled <- (points_p - trim) / (1 - 2 * trim)
+  interior <- span$interior
+  points_x <- c(span$head, x[interior])
+  points_p <- c(trim, adjusted[interior])
+  rescaled <- (c(points_p, 1 - trim) - trim) / (1 - 2 * trim)
+  points_x <- c(points_x, span$tail)
 
   sum(
     diff(rescaled) *
@@ -447,22 +412,152 @@ tsk_estimate <- function(x, adjusted, trim) {
   )
 }
 
-#' Recompute the trimmed estimate from perturbed proportions
+#' The trimmed range, shared by the estimate and its variance
 #'
-#' Used by the delta method, so it must repeat every step the estimator takes,
-#' including the smoothing and the Abbott adjustment.
+#' The two must agree on which concentrations bracket the trim, so the choice
+#' is made once here rather than twice.
 #'
+#' The head is taken at the **last** concentration whose proportion is at or
+#' below the trim, and the tail at the **first** whose proportion is at or above
+#' its complement. That asymmetry is deliberate: it takes the narrowest range
+#' holding all of the response. Taking the last concentration at both ends,
+#' which is the more obvious reading, extends the range across any plateau
+#' sitting exactly on the boundary and inflates the estimate, even though the
+#' plateau carries no response at all. The EPA worked examples do not contain
+#' such a plateau, so this is checked against `ecotoxicology` instead; see
+#' `tests/testthat/test-point-estimation.R`.
+#'
+#' @inheritParams tsk_variance
+#' @return A list with the interpolated `head` and `tail` positions on the log10
+#'   scale, the indices `low` and `high` that bracket them, and the `interior`
+#'   indices between. `NULL` if the proportions do not reach the trim or its
+#'   complement.
 #' @noRd
-recompute_tsk <- function(observed, control, x, trim, automatic) {
-  smoothed <- smooth_monotone(c(control, observed), direction = "increasing")
-  adjusted <- abbott(smoothed, p_control = smoothed[1])[-1]
-  if (automatic) {
-    trim <- auto_trim(adjusted)
+tsk_span <- function(x, adjusted, trim) {
+  below <- which(adjusted <= trim)
+  above <- which(adjusted >= 1 - trim)
+  if (!length(below) || !length(above)) {
+    return(NULL)
   }
-  if (trim >= 0.5) {
+  low <- max(below)
+  high <- min(above)
+  if (high <= low) {
+    return(NULL)
+  }
+
+  # Both interpolations return the concentration itself when its proportion
+  # already sits on the boundary, so the two cases need no separate treatment.
+  list(
+    low = low,
+    high = high,
+    interior = seq_len(high - low - 1L) + low,
+    head = x[low] +
+      (trim - adjusted[low]) *
+        (x[low + 1L] - x[low]) /
+        (adjusted[low + 1L] - adjusted[low]),
+    tail = x[high - 1L] +
+      (1 - trim - adjusted[high - 1L]) *
+        (x[high] - x[high - 1L]) /
+        (adjusted[high] - adjusted[high - 1L])
+  )
+}
+
+#' Variance of the trimmed Spearman-Karber estimate on the log10 scale
+#'
+#' The delta method applied analytically to `tsk_estimate()`, holding the trim
+#' fixed. This is the variance of Hamilton et al. (1977), and it is what
+#' reproduces the interval the EPA manuals print; see the details section of
+#' [trimmed_spearman_karber()] for why it is derived here rather than
+#' transcribed.
+#'
+#' ## The derivation
+#'
+#' Write the estimate as a sum over the trimmed points \eqn{t_0, \dots,
+#' t_{m+1}} with rescaled proportions \eqn{q_0 = 0, \dots, q_{m+1} = 1}, where
+#' \eqn{t_0} and \eqn{t_{m+1}} are the interpolated positions of the trim and
+#' its complement and \eqn{t_1, \dots, t_m} are the log10 concentrations
+#' between them. Summation by parts turns
+#'
+#' \deqn{\mu = \sum_{j=0}^{m} \frac{t_j + t_{j+1}}{2}(q_{j+1} - q_j)}
+#'
+#' into
+#'
+#' \deqn{\mu = \frac{t_m + t_{m+1}}{2} +
+#'   \sum_{i=1}^{m} q_i \frac{t_{i-1} - t_{i+1}}{2},}
+#'
+#' in which every dependence on the proportions is explicit. An interior
+#' proportion enters through its own \eqn{q_i} alone. The two proportions that
+#' bracket the trim enter through \eqn{t_0}, and the two that bracket its
+#' complement through \eqn{t_{m+1}}, by way of the interpolation. Differentiating
+#' each of those and summing \eqn{(\partial\mu/\partial p_i)^2 p_i (1 - p_i) /
+#' n_i} gives the variance.
+#'
+#' Writing it in this general form rather than as a separate expression for
+#' each possible number of interior points is what keeps the boundary cases
+#' correct: a design with no interior point at all, where the estimate reduces
+#' to the interpolated 50 per cent crossing, falls out of the same three lines
+#' as any other.
+#'
+#' ## The trim is held fixed
+#'
+#' The automatic trim is a function of the data, so a variance that accounted
+#' for how it was chosen would carry an extra term. Hamilton's does not, and
+#' neither does this, because the interval the manual prints is the one that
+#' treats the trim as given. Propagating the choice of trim as well was tried
+#' and rejected; it is what the earlier numerical implementation here did, and
+#' it does not reproduce the published limits.
+#'
+#' @param x Log10 concentrations, control excluded.
+#' @param adjusted Smoothed, Abbott-adjusted proportions, control excluded.
+#' @param n Number exposed at each concentration.
+#' @param trim The trim proportion.
+#' @return A single number, or `NA_real_` if the proportions do not bracket the
+#'   trim and its complement.
+#' @noRd
+tsk_variance <- function(x, adjusted, n, trim) {
+  span <- tsk_span(x, adjusted, trim)
+  if (is.null(span)) {
     return(NA_real_)
   }
-  tsk_estimate(x, adjusted, trim)
+  low <- span$low
+  high <- span$high
+
+  count <- length(span$interior)
+  inner <- seq_len(count)
+  q <- (adjusted[span$interior] - trim) / (1 - 2 * trim)
+
+  head_gap <- x[low + 1L] - x[low]
+  head_span <- adjusted[low + 1L] - adjusted[low]
+  tail_gap <- x[high] - x[high - 1L]
+  tail_span <- adjusted[high] - adjusted[high - 1L]
+
+  # t[1] is the interpolated head, t[count + 2] the interpolated tail, so
+  # t[i] and t[i + 2] are the neighbours of the i-th interior point.
+  t <- c(span$head, x[span$interior], span$tail)
+
+  gradient <- numeric(length(adjusted))
+  gradient[span$interior] <- (t[inner] - t[inner + 2L]) / (2 * (1 - 2 * trim))
+
+  # With no interior point the head and tail are the only terms and each
+  # carries a coefficient of one half.
+  head_weight <- if (count) q[1L] / 2 else 0.5
+  tail_weight <- if (count) (1 - q[count]) / 2 else 0.5
+
+  add <- function(index, value) {
+    gradient[index] <<- gradient[index] + value
+  }
+  add(low, head_weight * head_gap * (trim - adjusted[low + 1L]) / head_span^2)
+  add(low + 1L, -head_weight * head_gap * (trim - adjusted[low]) / head_span^2)
+  add(
+    high - 1L,
+    tail_weight * tail_gap * (1 - trim - adjusted[high]) / tail_span^2
+  )
+  add(
+    high,
+    -tail_weight * tail_gap * (1 - trim - adjusted[high - 1L]) / tail_span^2
+  )
+
+  sum(gradient^2 * adjusted * (1 - adjusted) / n)
 }
 
 #' Estimate lethal concentrations by the probit method

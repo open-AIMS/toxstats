@@ -482,3 +482,100 @@ R CMD check clean on both packages. The test suites are what made a mechanical
 rename of this size safe to attempt at all.
 
 ---
+
+## Session: cross-check against ecotoxicology
+Date: 2026-09-01
+Model: Claude Opus 5 (1M context)
+
+### Prompts and Responses
+
+**User:** cross-check our trimmed Spearman-Karber and probit results against the
+ecotoxicology package, go ahead and install it
+
+**Claude:** Installed `ecotoxicology` 1.0.1 from CRAN. It is a translation of
+the EPA Ecological Exposure Research Division programs discontinued in 1999,
+and so it carries Hamilton's variance formula directly — the formula the WET
+manual delegates to a program and never states.
+
+**The result: the trimmed Spearman-Karber interval now reproduces the manual
+exactly.** It had been documented for several phases as the one quantity in the
+package that differed from a published EPA value for a reason other than an
+error in the manual. That documentation was wrong; the interval was
+recoverable, and two compounded mistakes had been hiding it.
+
+*The first mistake: the trim was not held fixed.* The variance had been
+computed by perturbing each observed proportion and recomputing the estimate,
+and because the trim is chosen from the data, the recomputation propagated the
+choice of trim into the variance. That is arguably the more honest quantity but
+it is not what the manual's program reports, and it is not Hamilton's variance.
+
+*The second: the multiplier.* 1.96 had been used where section 11.2.3.3 writes
+2.0 for the untrimmed method and the trimmed method inherits it. That is about
+two per cent of the half-width — precisely the size of the residual that had
+been attributed to the variance formula.
+
+With the trim fixed, the multiplier at 2.0 and the derivative taken
+analytically, the package returns 69.7435 and 85.2558 against the printed 69.74
+and 85.26.
+
+The variance is **derived here, not transcribed**: `ecotoxicology` is GPL (>= 3)
+and this package is GPL (>= 2), so its code cannot be absorbed. Summation by
+parts rewrites the Spearman-Karber sum as
+
+```
+mu = (t_m + t_{m+1})/2 + sum_i q_i (t_{i-1} - t_{i+1})/2
+```
+
+in which every dependence on the proportions is explicit and each partial
+derivative is elementary. Interior proportions enter through their own rescaled
+value; the four bracketing the trim and its complement enter through the
+interpolated endpoints. Written as one general expression rather than as a
+formula per case, which is what made the boundary cases come out right without
+separate treatment. The derivation reproduces their `V1`, `V2`, `V3` and `V5`
+terms algebraically, which is what makes the next finding identifiable.
+
+**A sign error in `ecotoxicology`'s `V6`.** Across 1,253 random designs the two
+implementations agree on the point estimate to machine precision and on the
+variance to machine precision in every configuration except one: where exactly
+one concentration falls inside the trim, they differ by up to 60 per cent of
+the standard deviation. That case is covered by `V6`, whose head contribution
+carries the opposite sign to the same contribution in `V2`. Flipping it brings
+all 216 such designs to machine precision. A numerical derivative of this
+package's own estimator, which needs no external reference, confirms the sign
+used here. The EPA worked example has no concentration inside the trim, so the
+disagreement does not touch it.
+
+**A defect of ours the comparison found.** `tsk_estimate()` took the *last*
+concentration at or below `1 - a` as the upper endpoint of the trimmed range;
+the correct convention is the *first* concentration to reach it. The two differ
+only where the response plateaus exactly on the boundary — no EPA worked
+example does, which is why no test caught it — and in that case the estimate
+was too high, because the plateau carries no response and extending across it
+inflates the result. Endpoint selection is now made once in `tsk_span()` and
+shared by the estimate and the variance, so the two cannot diverge again.
+
+**Two defects in `ecotoxicology::TSK`**, both confined to its control-handling
+branch: it formats a non-integer trim with `%d`, which errors; and with a
+non-zero control response it computes `(r[-1] - r[1])/(n[-1] - n[1])`, whose
+denominator is zero for a balanced design. The oracle test passes it the
+treatments only, which avoids both.
+
+**Probit.** No change was needed. Their point estimates agree with ours to seven
+significant figures (LC1 7.9238659 against 7.9238640; LC50 22.8715684 against
+22.8715710), and their heterogeneity chi-square of 3.076447 independently
+confirms the Pearson statistic chosen earlier over the deviance, which gives
+3.859. Their confidence limits are wider than the manual's — (16.90, 30.97)
+against the printed (18.79, 27.85) — where ours reproduce it exactly, so
+`ecotoxicology` corroborates our probit point estimates and heterogeneity but
+not its own limits.
+
+Changes: `tsk_variance()` and `tsk_span()` added to `R/point_estimation.R`,
+replacing `recompute_tsk()`; `ecotoxicology` added to `Suggests` as a test
+oracle; three tests added (exact reproduction of the printed limits, the
+numerical-derivative self-check, and the plateau convention) and one rewritten;
+vignette section 15, `notes/TOXSTATS-claude.md` open question 3, the
+collaborator document, the README fidelity section and `NEWS.md` updated. Test
+suite passes; `R CMD check --as-cran` reports only the dev-version and
+pandoc-absent notes.
+
+---
